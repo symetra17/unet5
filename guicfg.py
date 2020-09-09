@@ -9,14 +9,17 @@ def get(cls_name):
         class cls_cfg:
             my_size = 576
             down_scale = 2
+            bands = 5
     elif cls_name == "Trees":
         class cls_cfg:
             my_size = 576
             down_scale = 2
+            bands = 5
     elif cls_name == 'BuildingTower':
         class cls_cfg:
             my_size = 576
             down_scale = 4
+            bands = 5
     elif cls_name == 'Squatter':
         class cls_cfg:
             my_size = 512
@@ -29,6 +32,7 @@ def get(cls_name):
             bands = 4
     else:
         class cls_cfg:
-            my_size = 640
-            down_scale = 4
+            my_size = 512
+            down_scale = 1
+            bands = 4
     return cls_cfg

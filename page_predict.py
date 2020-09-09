@@ -16,7 +16,7 @@ import guicfg as cfg
 import numpy as np
 import math
 import geotiff
-
+import shp_filter
 
 tk_root = None
 #my_size = cfg.my_size
@@ -58,9 +58,7 @@ def split_image(img, outname, my_size):
                     xstart,xend,ystart,yend)
             fullpath = path_insert_folde(fullpath, 'tmp')
             out_fname_list.append(fullpath)
-            print('subim shape',sub_im.shape)
-            geotiff.imwrite(fullpath, sub_im)
-            
+            geotiff.imwrite(fullpath, sub_im)            
     cv2.imwrite('slice_visual.bmp',slice_visual)
     return out_fname_list, start_pos
 
@@ -121,8 +119,11 @@ def single_predict(fname, class_name):
         geotiff.generate_tif_alpha(np4ch, replace_ext(src_fname, '_geo.tif'),
                     src_fname)
         fff=replace_ext(src_fname, '_geo.tif')
-        geotiff.polygonize(rasterTemp=fff,
-                    outShp=replace_ext(src_fname, '_shape'))
+        out_shp_file = replace_ext(src_fname, '_shape')
+        geotiff.polygonize(rasterTemp=fff, outShp=out_shp_file)
+        import shp_filter
+        shp_filter.add_area_single(os.path.join(out_shp_file,'predicted_object.shp'), 
+                1, '_filtered')
     else:
         print('is not a geotiff')
         
@@ -195,9 +196,9 @@ def build_page(root):
                 height="60",
                 width="400")
 
-    choices = ['Trees','Vehicles','Squatter','yyy','zzz']
+    choices = ['Trees','Vehicles','Squatter','Solar','zzz']
     tk_root.tkvar = StringVar(tk_root)
-    tk_root.tkvar.set('Squatter') # set the default option
+    tk_root.tkvar.set('Solar') # set the default option
 
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))

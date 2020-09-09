@@ -48,6 +48,6 @@ if __name__=='__main__':
         checkpoints_path = os.path.join('weights', cls_name, 'vanilla_unet_1'),
         epochs = cfg.epochs,
         auto_resume_checkpoint=arc,
-        steps_per_epoch = 512,
+        steps_per_epoch = 1800,
         batch_size=3
     )
