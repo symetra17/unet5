@@ -123,7 +123,7 @@ def single_predict(fname, class_name):
         geotiff.polygonize(rasterTemp=fff, outShp=out_shp_file)
         import shp_filter
         shp_filter.add_area_single(os.path.join(out_shp_file,'predicted_object.shp'), 
-                1, '_filtered')
+                1, '_filtered',class_name)
     else:
         print('is not a geotiff')
         
@@ -173,7 +173,7 @@ def build_page(root):
     var1 = IntVar()
     tk_root.checkbox1 = tkinter.ttk.Checkbutton(tk_root, text="NIR-RED CH SWAP", 
             command=checkbox_callback)
-    tk_root.checkbox1.pack(pady=(30,0))
+    #tk_root.checkbox1.pack(pady=(30,0))
     tk_root.checkbox1.state(['!alternate'])
 
     btn0 = Button(root, text="  Select file", command=openimage, 

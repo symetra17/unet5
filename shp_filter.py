@@ -11,42 +11,33 @@ def write_log(file, info_txt):
         f.write('\n')
         f.write('\n')
 
-
-# #test\
-# log_path = r"D:\Projects\Company\Temp\log2.log"\
-# info_txt = "this is the 2nd line"\
-# 
-# write_log(log_path, info_txt)
-
-# ### Add 'Area' into SHP
-
-
-
 # if the coloumn 'Area' is found, skip adding the coloumn
 # create a new column 'Area' if it's not been found
-def add_area(shp_path):
+def add_area(shp_path,category):
     source = ogr.Open(shp_path, update = True)
     layer = source.GetLayer()
     layer_defn = layer.GetLayerDefn()
     field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
     if 'Area' in field_names:
         info_txt ='Area Coloumn found in ' + shp_path
-        
     else:
-        # Add a new field
+        # Add 2 new fields
+        new_field = ogr.FieldDefn('Category', ogr.OFTString)
+        new_field.SetWidth(22)
+        layer.CreateField(new_field)
+            
         new_field = ogr.FieldDefn('Area', ogr.OFTReal)
         new_field.SetWidth(22)
-        new_field.SetPrecision(2) #added line to set precision
+        new_field.SetPrecision(2)
         layer.CreateField(new_field)
-        info_txt ='Area Coloumn added in ' + shp_path
-        
+        info_txt ='Area Coloumn added in ' + shp_path        
         for feature in layer:
             geom = feature.GetGeometryRef()
             area = geom.GetArea()
-            # print(area)
             feature.SetField("Area", area)
+            feature.SetField("Category", category)
             layer.SetFeature(feature)
-            
+
     # Close the Shapefile
     source = None
 
@@ -116,11 +107,12 @@ def batch_select_shp(current_path, output_path, area_threshold, Suffix):
                          # if shp has no projection information  
                         else:
                             pass
-                        add_area(shp_path)
+                        category = 'cat1'
+                        add_area(shp_path,category)
                         select_shp_on_area(shp_path, output_shp_path, area_threshold)
                     
 
-def add_area_single(fname, area_threshold, Suffix):
+def add_area_single(fname, area_threshold, Suffix,category):
     shpName = os.path.splitext(fname)[0]
     shp_path = fname
     prj_path = shpName + ".prj"
@@ -137,7 +129,7 @@ def add_area_single(fname, area_threshold, Suffix):
              # if shp has no projection information  
             else:
                 pass
-            add_area(shp_path)
+            add_area(shp_path,category)
             select_shp_on_area(shp_path, output_shp_path, area_threshold)        
 
 

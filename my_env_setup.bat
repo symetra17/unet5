@@ -9,4 +9,4 @@ pip install pillow
 pip install h5py
 pip install getmac
 conda install -c conda-forge gdal=2.4
-pip install pyshp
+pip install pyshp==2.1.0
