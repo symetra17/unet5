@@ -16,7 +16,7 @@ def delete_blank(base_dir, remove_portion):
             if random.random() < remove_portion:
                 fname = os.path.split(f)[-1]
                 body = os.path.splitext(fname)[0]
-                im_name = os.path.join(base_dir, R'image', body +'.jpg')
+                im_name = os.path.join(base_dir, R'image', body +'.tif')
                 if os.path.exists(im_name):
                     os.remove(f)
                     os.remove(im_name)

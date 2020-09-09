@@ -69,6 +69,8 @@ def single_predict(fname, class_name):
     src_fname = fname
     down_scale = cfg.get(class_name).down_scale
     my_size = cfg.get(class_name).my_size
+    bands = cfg.get(class_name).bands
+
     if down_scale > 1:
         im = geotiff.imread(fname)
         mul = 1/down_scale
@@ -91,7 +93,7 @@ def single_predict(fname, class_name):
     img_pad[0:img.shape[0], 0:img.shape[1], :] = img    
     slice_list,start_pos = split_image(img_pad, fname, my_size)
     for f in slice_list:
-        model_init.init(my_size, chk_point_path)
+        model_init.init(bands, my_size, chk_point_path)
         model_init.do_prediction(f)
     
     recombine(fname, start_pos)

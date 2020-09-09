@@ -37,7 +37,8 @@ if __name__=='__main__':
     fid.close()
 
     my_size = cfg.get(cls_name).my_size
-    model = unet(
+    bands = cfg.get(cls_name).bands
+    model = unet(bands,
             n_classes=2,
             input_height=my_size, 
             input_width =my_size)

@@ -91,9 +91,7 @@ def imread(fname):  # read like opencv
     from osgeo import gdal_array
     npa = gdal_array.LoadFile(fname)
     npa = np.moveaxis(npa, 0, 2)
-    if npa.dtype != np.float32:
-        print('Error: Image data type is not float')
-        quit()
+    npa = npa.astype(np.float32)
     return npa
 
 def imwrite(fname,npa):

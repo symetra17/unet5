@@ -48,7 +48,6 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     if isinstance(inp, six.string_types):
         inp = geotiff.imread(inp)
     
-    assert inp.shape[2] == 5, "Image should be h,w,5 "
     orininal_h = inp.shape[0]
     orininal_w = inp.shape[1]
 

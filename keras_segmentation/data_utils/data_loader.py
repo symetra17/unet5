@@ -8,11 +8,11 @@ import cv2
 import inspect
 import sys
 
-#current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-#parent_dir = os.path.dirname(current_dir)
-#parent_dir = os.path.dirname(parent_dir)
-#sys.path.insert(0, parent_dir)
-#import geotiff
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.dirname(current_dir)
+parent_dir = os.path.dirname(parent_dir)
+sys.path.insert(0, parent_dir)
+import geotiff
 
 try:
     from tqdm import tqdm

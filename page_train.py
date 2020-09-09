@@ -84,6 +84,8 @@ def slice_for_train_folder():
         n_thread = 1
     if n_thread > nf:
         n_thread = nf
+    if n_thread > 2:
+        n_thread = 2
 
     file_groups = []
     for n in range((n_thread-1)):
