@@ -4,6 +4,7 @@ import sys
 import os
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
+import datetime
 
 if __name__=='__main__':
     
@@ -17,6 +18,9 @@ if __name__=='__main__':
     if sys.argv[3] == 'resume':
         arc = True
     cls_name = sys.argv[4]
+    n_classes = 2
+    my_size = cfg.get(cls_name).my_size
+    bands = cfg.get(cls_name).bands
 
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     
@@ -26,20 +30,33 @@ if __name__=='__main__':
     set_session(sess)  # set this TensorFlow session as the default 
 
     fid = open('last_folder.txt','w')
-    fid.write(im_dir)
-    fid.write('\n')
-    fid.write(ann_dir)
-    fid.write('\n')
+    fid.write(im_dir + '\n')
+    fid.write(ann_dir + '\n')
     fid.close()
 
     fid = open('last_cls_name.txt','w')
     fid.write(cls_name)
     fid.close()
 
-    my_size = cfg.get(cls_name).my_size
-    bands = cfg.get(cls_name).bands
+    tstp = datetime.datetime.now()
+
+    weight_dir = os.path.join('weights', cls_name)
+    if not os.path.exists(weight_dir):
+        os.mkdir(weight_dir)
+
+    fname = os.path.join(weight_dir, 'train.log')
+    fid = open(fname,'w')
+    fid.write('Training config log %s\n'%tstp)
+    fid.write('Patch size:%d\n'%my_size)
+    fid.write('Class name:%s\n'%cls_name)
+    fid.write('N Band    :%d\n'%bands)
+    fid.write('N Class   :%d\n'%n_classes)
+    fid.write(im_dir + '\n')
+    fid.write(ann_dir + '\n')
+    fid.close()
+
     model = unet(bands,
-            n_classes=2,
+            n_classes=n_classes,
             input_height=my_size, 
             input_width =my_size)
     model.train(
@@ -48,6 +65,6 @@ if __name__=='__main__':
         checkpoints_path = os.path.join('weights', cls_name, 'vanilla_unet_1'),
         epochs = cfg.epochs,
         auto_resume_checkpoint=arc,
-        steps_per_epoch = 1800,
-        batch_size=3
+        steps_per_epoch = 512,
+        batch_size=4
     )

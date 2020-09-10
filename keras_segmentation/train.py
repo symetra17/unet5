@@ -29,8 +29,8 @@ def find_latest_checkpoint(checkpoints_path, fail_safe=True):
 
 
 def train(model,
-          train_images,
-          train_annotations,
+          train_images,          # image dir
+          train_annotations,     # annotation dir
           input_height=None,
           input_width=None,
           n_classes=None,
@@ -70,17 +70,6 @@ def train(model,
                       optimizer=optimizer_name,
                       metrics=['accuracy'])
 
-    #if checkpoints_path is not None:
-    #    with open(checkpoints_path+"_config.json", "w") as f:
-    #        json.dump({
-    #            "model_class": model.model_name,
-    #            "n_classes": n_classes,
-    #            "input_height": input_height,
-    #            "input_width": input_width,
-    #            "output_height": output_height,
-    #            "output_width": output_width
-    #        }, f)
-
     if load_weights is not None and len(load_weights) > 0:
         print("Loading weights from ", load_weights)
         model.load_weights(load_weights)
@@ -111,7 +100,7 @@ def train(model,
         model.save_weights(checkpoints_path + ".weight_0")
         model.fit_generator(train_gen, steps_per_epoch, epochs=1)
         if checkpoints_path is not None:
-            if ep%2 == 0:
+            if ep%4 == 0:
                 model.save_weights(checkpoints_path + "." + str(ep))
             model.save_weights(checkpoints_path + ".weight")
         print("Finished Epoch", ep)

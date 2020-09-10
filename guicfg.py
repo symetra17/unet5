@@ -30,6 +30,11 @@ def get(cls_name):
             my_size = 512
             down_scale = 2
             bands = 4
+    elif cls_name == 'Farmland':
+        class cls_cfg:
+            my_size = 512
+            down_scale = 2
+            bands = 4
     else:
         class cls_cfg:
             my_size = 512
