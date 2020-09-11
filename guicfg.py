@@ -33,8 +33,14 @@ def get(cls_name):
     elif cls_name == 'Farmland':
         class cls_cfg:
             my_size = 512
-            down_scale = 2
+            down_scale = 4
             bands = 4
+    elif cls_name == 'SquatterAndTower':
+        class cls_cfg:
+            my_size = 512
+            down_scale = 4
+            bands = 5
+            cls_list = OrderedDict({'Squatter':1,'Tower':2})
     else:
         class cls_cfg:
             my_size = 512

@@ -138,13 +138,13 @@ def select_raw_train_folder():
         return
     foder = os.path.normpath(foder)
     im_path = os.path.join(foder, 'image')
-    ann_path = os.path.join(foder, 'annotation')
-    
-    #answer = messagebox.askquestion("Satrt New Training ?", 'Yes to start new or No to resume')
-    #init_mode = 'new'
-    #if answer == 'no':
-    #    init_mode = 'resume'
-    #start_subprocess(im_path,ann_path,init_mode,)
+    ann_path = os.path.join(foder, 'annotation')    
+    init_mode = 'new'
+    fid = open('last_cls_name.txt','r')
+    cls_name = fid.read()
+    cls_name = cls_name.rstrip()
+    fid.close()
+    start_subprocess(im_path,ann_path,init_mode,cls_name)
 
 def start_subprocess(im_path,ann_path,init_mode,cls_name):
     if os.name == 'nt':

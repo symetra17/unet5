@@ -115,18 +115,18 @@ def unet(bands, n_classes, input_height=416, input_width=608, encoder_level=3):
     return model
 
 
-def vgg_unet(n_classes, input_height=416, input_width=608, encoder_level=3):
+def vgg_unet(bands,n_classes, input_height=416, input_width=608, encoder_level=3):
 
-    model = _unet(n_classes, get_vgg_encoder,
+    model = _unet(bands,n_classes, get_vgg_encoder,
                   input_height=input_height, input_width=input_width)
     model.model_name = "vgg_unet"
     return model
 
 
-def resnet50_unet(n_classes, input_height=416, input_width=608,
+def resnet50_unet(bands, n_classes, input_height=416, input_width=608,
                   encoder_level=3):
 
-    model = _unet(n_classes, get_resnet50_encoder,
+    model = _unet(bands, n_classes, get_resnet50_encoder,
                   input_height=input_height, input_width=input_width)
     model.model_name = "resnet50_unet"
     return model

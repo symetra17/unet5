@@ -150,8 +150,9 @@ def openfolder_predict():
     for item in ext_list:
         files.extend(glob(os.path.join(fd,'*.'+item)))
     print(files)
+    class_name = tk_root.tkvar.get()
     for fname in files:
-        single_predict(fname)    
+        single_predict(fname, class_name)
     messagebox.showinfo("Prediction completed", "Prediction completed")
     
 def checkbox_callback():
@@ -169,12 +170,6 @@ def build_page(root):
     tk_root.cfg_editbox = cfg_editbox
     import json
     tk_root.cfg_editbox.insert(END, json.dumps(cfg.classes_dict))
-
-    var1 = IntVar()
-    tk_root.checkbox1 = tkinter.ttk.Checkbutton(tk_root, text="NIR-RED CH SWAP", 
-            command=checkbox_callback)
-    #tk_root.checkbox1.pack(pady=(30,0))
-    tk_root.checkbox1.state(['!alternate'])
 
     btn0 = Button(root, text="  Select file", command=openimage, 
             height=1, width=80,  
@@ -196,9 +191,9 @@ def build_page(root):
                 height="60",
                 width="400")
 
-    choices = ['Trees','Vehicles','Squatter','Solar','zzz']
+    choices = ['Farmland','Trees','Vehicles','Squatter','Solar']
     tk_root.tkvar = StringVar(tk_root)
-    tk_root.tkvar.set('Solar') # set the default option
+    tk_root.tkvar.set('Farmland') # set the default option
 
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))

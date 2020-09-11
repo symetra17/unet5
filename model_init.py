@@ -4,8 +4,6 @@ import os
 
 from keras_segmentation.models.unet import unet
 
-print('------------predict---model---init---')
-
 #from keras_segmentation.train import find_latest_checkpoint
 #from keras.backend.tensorflow_backend import set_session
 

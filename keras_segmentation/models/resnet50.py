@@ -120,8 +120,8 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
     return x
 
 
-def get_resnet50_encoder(input_height=224,  input_width=224,
-                         pretrained='imagenet',
+def get_resnet50_encoder(bands, input_height=224,  input_width=224,
+                         pretrained='',
                          include_top=True, weights='imagenet',
                          input_tensor=None, input_shape=None,
                          pooling=None,
@@ -133,7 +133,7 @@ def get_resnet50_encoder(input_height=224,  input_width=224,
     if IMAGE_ORDERING == 'channels_first':
         img_input = Input(shape=(3, input_height, input_width))
     elif IMAGE_ORDERING == 'channels_last':
-        img_input = Input(shape=(input_height, input_width, 3))
+        img_input = Input(shape=(input_height, input_width, bands))
 
     if IMAGE_ORDERING == 'channels_last':
         bn_axis = 3

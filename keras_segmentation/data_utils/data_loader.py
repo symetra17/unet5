@@ -187,8 +187,20 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
                 im = cv2.flip(im, 1)
                 seg = cv2.flip(seg, 1)
 
-            #if do_augment:
-            #    im, seg[:, :, 0] = augment_seg(im, seg[:, :, 0])
+            random_bit = random.getrandbits(1)
+            if bool(random_bit):
+                random_bit = random.getrandbits(1)
+                if bool(random_bit):
+                    im = cv2.transpose(im)
+                    seg = cv2.transpose(seg)
+                else:
+                    im = cv2.transpose(im)
+                    im = cv2.transpose(im)
+                    im = cv2.transpose(im)
+                    seg = cv2.transpose(seg)
+                    seg = cv2.transpose(seg)
+                    seg = cv2.transpose(seg)
+
             X.append(get_image_array(im, input_width,
                                    input_height, ordering=IMAGE_ORDERING))
             Y.append(get_segmentation_array(
