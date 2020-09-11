@@ -94,24 +94,24 @@ def single_predict(fname, class_name):
     
     recombine(fname, start_pos)
     res_file = recombine2(fname, start_pos)
-        
+    
     #import blur_bkgnd
     #blur_bkgnd.blur_bkgnd(fname,)
     #generate_tif_alpha
 
+    img = cv2.imread(res_file)
     if down_scale > 1:
-        img = cv2.imread(res_file)
         img = cv2.resize(img,None,fx=down_scale,fy=down_scale)
         cv2.imwrite(res_file, img)
 
-    pil_img = geotiff.imread(src_fname)
-
-    print('src_fname', src_fname)
+    print('src_fname---------->', src_fname)
     if geotiff.is_geotif(src_fname):
+        pil_img = geotiff.imread(src_fname)
         h = pil_img.shape[0]
         w = pil_img.shape[1]
+        del pil_img
         np4ch = np.zeros((h, w, 4), dtype=np.uint8)
-        cp = img[0:h, 0:w, 0].copy()
+        cp = img[0:h, 0:w, 0].astype(np.uint8).copy()
         np4ch[:,:,3] = cp   # fill alpha channel with detection result
         np4ch[:,:,0] = cp   # fill 1st channel with detection result
         geotiff.generate_tif_alpha(np4ch, replace_ext(src_fname, '_geo.tif'),
@@ -119,9 +119,8 @@ def single_predict(fname, class_name):
         fff=replace_ext(src_fname, '_geo.tif')
         out_shp_file = replace_ext(src_fname, '_shape')
         geotiff.polygonize(rasterTemp=fff, outShp=out_shp_file)
-        import shp_filter
         shp_filter.add_area_single(os.path.join(out_shp_file,'predicted_object.shp'), 
-                1, '_filtered',class_name)
+                10, '_filtered',class_name)
     else:
         print('is not a geotiff')
         

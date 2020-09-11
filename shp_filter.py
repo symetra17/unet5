@@ -117,12 +117,12 @@ def add_area_single(fname, area_threshold, Suffix,category):
     shp_path = fname
     prj_path = shpName + ".prj"
     output_shp_path = shpName + Suffix +".shp"
-    
     sf = shapefile.Reader(shp_path)
     # when shp is polygon
     if sf.shapeType == 5:
         # if shp is not empty
         if len(sf.records()) > 0:
+            print(999)
             # if shp has projection information
             if os.path.exists(prj_path):
                 create_prj(shp_path, prj_path)
@@ -133,10 +133,9 @@ def add_area_single(fname, area_threshold, Suffix,category):
             select_shp_on_area(shp_path, output_shp_path, area_threshold)        
 
 
-
 if __name__=='__main__':
-    fname = R"C:\Users\echo\Code\unet5\weights\5stack\20180313SA1_B05_6NW14C_shape\predicted_object.shp"
-    add_area_single(fname,1.0,'_echo')
+    fname = R"C:\Users\echo\Code\unet5\weights\Solar\Newfolder\ssss\predicted_object.shp"
+    add_area_single(fname,1.0,'_echo','Solar')
     quit()
 
     current_path = R'C:\Users\echo\Code\unet5\weights\Vehicles\VehiclesTS\20191128SA1_B05_6NE14A_shape'
