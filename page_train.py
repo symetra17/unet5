@@ -19,6 +19,8 @@ import json_conv
 import multi_tif
 import multiprocessing as mp
 
+tk_root = None
+
 def path_insert_folde(filename, folder):
     splited = os.path.split(filename)
     return os.path.join(splited[0], folder, splited[1])
@@ -140,10 +142,7 @@ def select_raw_train_folder():
     im_path = os.path.join(foder, 'image')
     ann_path = os.path.join(foder, 'annotation')    
     init_mode = 'new'
-    fid = open('last_cls_name.txt','r')
-    cls_name = fid.read()
-    cls_name = cls_name.rstrip()
-    fid.close()
+    class_name = tk_root.tkvar.get()
     start_subprocess(im_path,ann_path,init_mode,cls_name)
 
 def start_subprocess(im_path,ann_path,init_mode,cls_name):
@@ -168,7 +167,9 @@ def resume_training():
 
 def build_page(root):
     # Pre-tranning slice
-    
+    global tk_root 
+    tk_root = root
+
     str1 = "\nThe training image should comes with a label file with same base filename and json file extension"
     lb = Label(root, wraplength=450, 
         text=str1)
@@ -186,7 +187,7 @@ def build_page(root):
             height=1, 
             width=100, 
             font=('Helvetica', '18'))
-    btn3.pack(pady=(20,30))
+    #btn3.pack(pady=(20,30))
 
     btn2 = Button(root, text=" Resume", 
             command=resume_training,
@@ -223,3 +224,12 @@ def build_page(root):
     btn3.config(image=photo0315, compound="left",
         width="400",
         height="60")
+
+    choices = cfg.cls_list
+    root.tkvar = StringVar(root)
+    root.tkvar.set('Farmland') # set the default option
+    style = ttk.Style()
+    style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
+    root.popupMenu = OptionMenu(root, root.tkvar, *choices)
+    root.popupMenu.config(width=8,font=('Helvetica',16))
+    root.popupMenu.pack(pady=(10,40))

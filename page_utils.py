@@ -34,13 +34,13 @@ def btn1_callback():
     fd = askdirectory(title=R'Choose "Slice" directory')
     if len(fd) == 0:
         return
-    remove_blank(fd, 0.1)
+    remove_blank(fd, 0.2)
 
 def btn2_callback():
     fd = askdirectory(title=R'Choose "Slice" directory')
     if len(fd) == 0:
         return
-    remove_blank(fd, 0.2)
+    remove_blank(fd, 0.4)
 
 def build_page(root):
     global tk_root 
@@ -57,7 +57,7 @@ def build_page(root):
                 height="60",
                 width="400")
 
-    btn1 = Button(root, text=R" Remove 10% blank images ", command=btn1_callback, 
+    btn1 = Button(root, text=R" Remove 20% blank images ", command=btn1_callback, 
             height=1,
             width=100,  
             font=('Helvetica', '16'))
@@ -67,7 +67,7 @@ def build_page(root):
                 height="60",
                 width="400")
 
-    btn1 = Button(root, text=R" Remove 20% blank images ", command=btn2_callback, 
+    btn1 = Button(root, text=R" Remove 40% blank images ", command=btn2_callback, 
             height=1,
             width=100,  
             font=('Helvetica', '16'))

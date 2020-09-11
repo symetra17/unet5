@@ -97,7 +97,9 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     
     if out_fname is not None:
         #cv2.imwrite(out_fname, seg_img, [cv2.IMWRITE_JPEG_QUALITY, 97])
-        cv2.imwrite(out_fname, seg_img)
+        #cv2.imwrite(out_fname, seg_img)
+        geotiff.imwrite(os.path.splitext(out_fname)[0]+'.tif', seg_img)
+
 
     if out_fname2 is not None:
         pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation=0)

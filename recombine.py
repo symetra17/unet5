@@ -16,11 +16,16 @@ def path_insert_foldr(filename, folder):
 def recombine(src_img_file, start_pos):
     
     '''This function collects fragment image and forms a larger images'''
-    files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result.bmp', 'tmp'))
+    files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result.tif', 'tmp'))
     www = files[0].split('_')
     file_head = '_'.join(www[0:-11])
     img_w, img_h = int(www[-10]), int(www[-8])
-    my_size = cv2.imread(files[0]).shape[0]
+    
+    if not os.path.exists(files[0]):
+        print(files[0]+'-------->file not exists')
+        return
+
+    my_size = geotiff.imread(files[0]).shape[0]
     img = np.zeros((img_h, img_w, 3) ,dtype=np.uint8)
     img_h, img_w = img.shape[:2]
     ntrim = 18
@@ -29,9 +34,9 @@ def recombine(src_img_file, start_pos):
         ystart = pos[1]
         xend   = xstart + my_size
         yend   = ystart + my_size
-        inp_name = file_head + '_W_%d_H_%d_X_%d_%d_Y_%d_%d_result.bmp'%(
+        inp_name = file_head + '_W_%d_H_%d_X_%d_%d_Y_%d_%d_result.tif'%(
                 img_w, img_h, xstart, xend, ystart, yend)
-        sub_img = cv2.imread(inp_name)
+        sub_img = geotiff.imread(inp_name)
 
         img[ystart+ntrim:yend-ntrim, xstart+ntrim:xend-ntrim, :] = sub_img[ntrim:sub_img.shape[0]-ntrim,ntrim:sub_img.shape[1]-ntrim,:]
 
@@ -41,15 +46,7 @@ def recombine(src_img_file, start_pos):
     src_img = geotiff.imread(src_img_file)
     crop_size = (src_img.shape[0], src_img.shape[1])
     # Crop result images to remove zeros padding on the right and bottom size of the image.
-    if cfg.predict_output_format == 'jpg':
-        cv2.imwrite(remove_ext(src_img_file) + '_result.jpg', 
-            img[0:crop_size[0], 0:crop_size[1], :],
-            [cv2.IMWRITE_JPEG_QUALITY, 97])
-    elif cfg.predict_output_format == 'bmp':
-        cv2.imwrite(remove_ext(src_img_file) + '_result.bmp', 
-            img[0:crop_size[0], 0:crop_size[1], :])
-    elif cfg.predict_output_format == 'png':
-        cv2.imwrite(remove_ext(src_img_file) + '_result.png', 
+    geotiff.imwrite(remove_ext(src_img_file) + '_result.tif', 
             img[0:crop_size[0], 0:crop_size[1], :])
 
     outname = ''

@@ -4,6 +4,8 @@ epochs = 200
 predict_output_format = 'jpg'   # option include jpg bmp
 MATLAB = False
 
+cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar']
+
 def get(cls_name):
     if cls_name == "Vehicles":
         class cls_cfg:
@@ -28,7 +30,7 @@ def get(cls_name):
     elif cls_name == 'Solar':
         class cls_cfg:
             my_size = 512
-            down_scale = 2
+            down_scale = 1
             bands = 4
     elif cls_name == 'Farmland':
         class cls_cfg:

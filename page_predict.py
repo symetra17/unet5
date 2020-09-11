@@ -19,8 +19,6 @@ import geotiff
 import shp_filter
 
 tk_root = None
-#my_size = cfg.my_size
-flip_nir_red_ch = False
 
 def path_insert_folde(filename, folder):
     splited = os.path.split(filename)
@@ -155,9 +153,6 @@ def openfolder_predict():
         single_predict(fname, class_name)
     messagebox.showinfo("Prediction completed", "Prediction completed")
     
-def checkbox_callback():
-    global flip_nir_red_ch
-    flip_nir_red_ch = 'selected' in tk_root.checkbox1.state()
 
 def build_page(root):
     global tk_root 
@@ -191,15 +186,11 @@ def build_page(root):
                 height="60",
                 width="400")
 
-    choices = ['Farmland','Trees','Vehicles','Squatter','Solar']
+    choices = cfg.cls_list
     tk_root.tkvar = StringVar(tk_root)
     tk_root.tkvar.set('Farmland') # set the default option
-
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
-
-    tk_root.popupMenu = OptionMenu(tk_root, tk_root.tkvar, 
-        *choices)
-
+    tk_root.popupMenu = OptionMenu(tk_root, tk_root.tkvar, *choices)
     tk_root.popupMenu.config(width=8,font=('Helvetica',16))
     tk_root.popupMenu.pack(pady=(10,10))

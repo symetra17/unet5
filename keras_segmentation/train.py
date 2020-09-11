@@ -97,10 +97,9 @@ def train(model,
 
     for ep in range(epochs):
         print("Starting Epoch ", ep)
-        model.save_weights(checkpoints_path + ".weight_0")
         model.fit_generator(train_gen, steps_per_epoch, epochs=1)
         if checkpoints_path is not None:
-            if ep%4 == 0:
+            if ep%3 == 0:
                 model.save_weights(checkpoints_path + "." + str(ep))
             model.save_weights(checkpoints_path + ".weight")
         print("Finished Epoch", ep)
