@@ -7,6 +7,8 @@ import numpy as np
 import cv2
 import inspect
 import sys
+import imgaug as ia
+from imgaug import augmenters as iaa
 
 current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parent_dir = os.path.dirname(current_dir)
@@ -192,11 +194,13 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
             if bool(random_bit):
                 random_bit = random.getrandbits(1)
                 if bool(random_bit):
-                    im = ndimage.rotate(im, 90, reshape=False)
-                    seg = ndimage.rotate(seg, 90, reshape=False)
+                    iaa_ops = iaa.Rot90(1, keep_size=False)
+                    im = iaa_ops.augment_image(im)
+                    seg = iaa_ops.augment_image(seg)
                 else:
-                    im = ndimage.rotate(im, -90, reshape=False)
-                    seg = ndimage.rotate(seg, -90, reshape=False)
+                    iaa_ops = iaa.Rot90(3, keep_size=False)
+                    im = iaa_ops.augment_image(im)
+                    seg = iaa_ops.augment_image(seg)
 
             X.append(get_image_array(im, input_width,
                                    input_height, ordering=IMAGE_ORDERING))
