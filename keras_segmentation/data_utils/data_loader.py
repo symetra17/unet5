@@ -13,6 +13,7 @@ parent_dir = os.path.dirname(current_dir)
 parent_dir = os.path.dirname(parent_dir)
 sys.path.insert(0, parent_dir)
 import geotiff
+from scipy import ndimage, misc
 
 try:
     from tqdm import tqdm
@@ -191,15 +192,11 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
             if bool(random_bit):
                 random_bit = random.getrandbits(1)
                 if bool(random_bit):
-                    im = cv2.transpose(im)
-                    seg = cv2.transpose(seg)
+                    im = ndimage.rotate(im, 90, reshape=False)
+                    seg = ndimage.rotate(seg, 90, reshape=False)
                 else:
-                    im = cv2.transpose(im)
-                    im = cv2.transpose(im)
-                    im = cv2.transpose(im)
-                    seg = cv2.transpose(seg)
-                    seg = cv2.transpose(seg)
-                    seg = cv2.transpose(seg)
+                    im = ndimage.rotate(im, -90, reshape=False)
+                    seg = ndimage.rotate(seg, -90, reshape=False)
 
             X.append(get_image_array(im, input_width,
                                    input_height, ordering=IMAGE_ORDERING))
