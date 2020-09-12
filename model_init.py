@@ -24,12 +24,12 @@ def remove_ext(inp):
     return os.path.splitext(inp)[0]
 
 
-def init(bands, my_size, checkpoint_path=None):
+def init(n_classes, bands, my_size, checkpoint_path=None):
 
     global initalized, model, last_chkpt_path
     if not initalized:
         model = unet(bands,
-            n_classes = 1 + len(cfg.classes_dict),  
+            n_classes = n_classes,
             input_height = my_size, 
             input_width  = my_size)
         latest_m = checkpoint_path

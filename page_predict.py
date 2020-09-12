@@ -66,6 +66,7 @@ def single_predict(fname, class_name):
     down_scale = cfg.get(class_name).down_scale
     my_size = cfg.get(class_name).my_size
     bands = cfg.get(class_name).bands
+    n_sub_cls = 1 + len(cfg.get(class_name).cls_sub_list)
 
     if down_scale > 1:
         im = geotiff.imread(fname)
@@ -89,7 +90,7 @@ def single_predict(fname, class_name):
     img_pad[0:img.shape[0], 0:img.shape[1], :] = img    
     slice_list,start_pos = split_image(img_pad, fname, my_size)
     for f in slice_list:
-        model_init.init(bands, my_size, chk_point_path)
+        model_init.init(n_sub_cls, bands, my_size, chk_point_path)
         model_init.do_prediction(f)
     
     recombine(fname, start_pos)
@@ -104,7 +105,6 @@ def single_predict(fname, class_name):
         img = cv2.resize(img,None,fx=down_scale,fy=down_scale)
         cv2.imwrite(res_file, img)
 
-    print('src_fname---------->', src_fname)
     if geotiff.is_geotif(src_fname):
         pil_img = geotiff.imread(src_fname)
         h = pil_img.shape[0]
@@ -160,7 +160,7 @@ def build_page(root):
     lb = Label(root, text='Class Name')
     lb.pack(pady=(10,0))
     cfg_editbox = Text(root, height=2)
-    cfg_editbox.pack(padx=5)
+    #cfg_editbox.pack(padx=5)
     tk_root.cfg_editbox = cfg_editbox
     import json
     tk_root.cfg_editbox.insert(END, json.dumps(cfg.classes_dict))

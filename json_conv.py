@@ -23,6 +23,8 @@ def path_insert_folde(filename, folder):
 
 
 def split_label(inplist, im_file_name, cls_name, remove_blank=True):
+    print(cls_name)
+
     reload(cfg)
     cls_cfg = cfg.get(cls_name)
     try:
@@ -50,13 +52,15 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
 
     anno_im = np.zeros((img_h, img_w), dtype=np.uint8)
     ntotal_out = 0
+    cls_sub_list = cfg.get(cls_name).cls_sub_list
     for o in inplist:
         pts = np.array(o['points']).astype(np.int32)
-        if not cfg.MATLAB:
-            classid = 1
-        else:
-            classid = 255
-        
+        try:
+            classid = cls_sub_list[o['label']]
+        except:
+            classid = 0
+            print('Unexpected class label: ', o['label'])
+
         cv2.fillPoly(anno_im, [pts], (classid))
         ntotal_out += 1
 

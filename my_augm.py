@@ -3,12 +3,16 @@ import os
 import cv2
 import random
 import numpy as np
+from scipy import ndimage, misc
 
-fname = R"C:\Users\echo\Code\unet5\weights\Farmland\20180103SA1_B05_2SE22B (Custom).TIF"
+fname = R"C:\Users\dva\Pictures\20180313SA1_B05_6NE11B_W_16384_H_12288_X_0_2048_Y_2048_4096.tif"
 im = geotiff.imread(fname)
-im = im.astype(np.float32)
+#im = cv2.imread(fname, 1)
 
-im = cv2.transpose(im)
+im = im.astype(np.float32)
+im = im[:,:,0:6]
+
+im = ndimage.rotate(im, -90, reshape=False)
 
 im = im[:,:,0:3]
 

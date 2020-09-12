@@ -67,12 +67,7 @@ def slice_for_train_folder():
         messagebox.showinfo("Training could not start", msg)
         return
 
-    cls_name_list = json_conv.get_class_name(files)
-    if len(cls_name_list) > 1:
-        msg = "There are more than 1 class in labels"
-        messagebox.showinfo("Training could not start", msg)
-        return
-    cls_name = cls_name_list[0]
+    cls_name = tk_root.tkvar.get()
 
     im_path = os.path.join(foder, 'slice', 'image')
     ann_path = os.path.join(foder, 'slice', 'annotation')
@@ -143,7 +138,7 @@ def select_raw_train_folder():
     ann_path = os.path.join(foder, 'annotation')    
     init_mode = 'new'
     class_name = tk_root.tkvar.get()
-    start_subprocess(im_path,ann_path,init_mode,cls_name)
+    start_subprocess(im_path,ann_path,init_mode,class_name)
 
 def start_subprocess(im_path,ann_path,init_mode,cls_name):
     if os.name == 'nt':

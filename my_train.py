@@ -18,7 +18,7 @@ if __name__=='__main__':
     if sys.argv[3] == 'resume':
         arc = True
     cls_name = sys.argv[4]
-    n_classes = 2
+    n_classes = 1 + (cfg.get(cls_name).cls_sub_list)
     my_size = cfg.get(cls_name).my_size
     bands = cfg.get(cls_name).bands
 

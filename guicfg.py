@@ -12,40 +12,29 @@ def get(cls_name):
             my_size = 576
             down_scale = 2
             bands = 5
+            cls_sub_list = OrderedDict({'Vehicles':1})
     elif cls_name == "Trees":
         class cls_cfg:
             my_size = 576
             down_scale = 2
             bands = 5
-    elif cls_name == 'BuildingTower':
-        class cls_cfg:
-            my_size = 576
-            down_scale = 4
-            bands = 5
+            cls_sub_list = OrderedDict({'Trees':1})
     elif cls_name == 'Squatter':
         class cls_cfg:
             my_size = 512
             down_scale = 4
             bands = 5
+            cls_sub_list = OrderedDict({'Squatter':1,'BuildingTower':2})
     elif cls_name == 'Solar':
         class cls_cfg:
             my_size = 512
             down_scale = 1
             bands = 4
+            cls_sub_list = OrderedDict({'Solar':1})
     elif cls_name == 'Farmland':
         class cls_cfg:
             my_size = 512
             down_scale = 4
             bands = 4
-    elif cls_name == 'SquatterAndTower':
-        class cls_cfg:
-            my_size = 512
-            down_scale = 4
-            bands = 5
-            cls_list = OrderedDict({'Squatter':1,'Tower':2})
-    else:
-        class cls_cfg:
-            my_size = 512
-            down_scale = 1
-            bands = 4
+            cls_sub_list = OrderedDict({'Farmland':1})
     return cls_cfg
