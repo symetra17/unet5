@@ -158,7 +158,7 @@ def build_page(root):
     tk_root = root
 
     lb = Label(root, text='Class Name')
-    lb.pack(pady=(10,0))
+    #lb.pack(pady=(10,0))
     cfg_editbox = Text(root, height=2)
     #cfg_editbox.pack(padx=5)
     tk_root.cfg_editbox = cfg_editbox
