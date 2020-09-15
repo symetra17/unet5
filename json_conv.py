@@ -2,15 +2,17 @@ import json
 import cv2
 import numpy as np
 import os
-import PIL.Image
-from PIL import Image
+#import PIL.Image
+#from PIL import Image
 import guicfg as cfg
 import glob
 from importlib import reload
 from collections import OrderedDict
 import geotiff
+import multiprocessing as mp
+import random
 
-PIL.Image.MAX_IMAGE_PIXELS = None
+#PIL.Image.MAX_IMAGE_PIXELS = None
 
 def remove_ext(inp):
     # Remove filename extenstion, xxx123.jpg to xxx123
@@ -23,7 +25,6 @@ def path_insert_folde(filename, folder):
 
 
 def split_label(inplist, im_file_name, cls_name, remove_blank=True):
-    print(cls_name)
 
     reload(cfg)
     cls_cfg = cfg.get(cls_name)
@@ -32,10 +33,14 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
     except:
         down_scale = 1
 
-    my_size = cls_cfg.my_size * down_scale    
-    
+    my_size = cls_cfg.my_size * down_scale
+    random.seed()
+    augmen_x = random.randint(0, my_size)
+    augmen_y = random.randint(0, my_size)
+
     img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
 
+    print('padding')
     # Pad image to 1024 divisible
     img_h, img_w = img.shape[0:2]
     if img_h%my_size != 0:
@@ -50,6 +55,7 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
     img_h, img_w = img.shape[0:2]
     #
 
+    print('fill polygon')
     anno_im = np.zeros((img_h, img_w), dtype=np.uint8)
     ntotal_out = 0
     cls_sub_list = cfg.get(cls_name).cls_sub_list
@@ -64,13 +70,22 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
         cv2.fillPoly(anno_im, [pts], (classid))
         ntotal_out += 1
 
+    #Note: Possible to insert rotation in here
+    # img = rotate(img, 10)
+    # anno_im = rotate(anno_im, 10)
+
     for n in range(int(img_w/my_size)):
         for m in range(int(img_h/my_size)):
     
-            xstart = (n+0)*my_size
-            xend   = (n+1)*my_size
-            ystart = (m+0)*my_size
-            yend   = (m+1)*my_size
+            xstart = n * my_size + augmen_x
+            xend   = xstart + my_size
+            if xend > img.shape[1]:
+                continue
+
+            ystart = m * my_size + augmen_y
+            yend   = ystart + my_size
+            if yend > img.shape[0]:
+                continue
             
             outname=remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d.jpg'%(
                 img_w,img_h,xstart,xend,ystart,yend)
@@ -95,34 +110,83 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
             cv2.imwrite(outpath + '.png', sub_anno)
             outpath = path_insert_folde(remove_ext(outname) + '.tif', 'slice')
             outpath = path_insert_folde(outpath, 'image')
-            #blue = sub_im[:,:,0].copy()
-            #sub_im[:,:,0] = sub_im[:,:,2]
-            #sub_im[:,:,2] = blue
-            #cv2.imwrite(outpath, sub_im)
+            sub_im = sub_im[:,:,0:3]
             geotiff.imwrite(outpath,sub_im)
             
     print('Total output count', ntotal_out)
-
-
-def split_for_training(img_file, cls_name):
-
-    inp_json = remove_ext(img_file) + '.json'
-    nobj = 0
-    nobj_npy = np.array([0]*len(cfg.classes_dict))
     
-    if not os.path.exists(inp_json):
-        pass
+def mp_split(files, cls_name):
+    for fname in files:
+        inp_json = remove_ext(fname) + '.json'
+        if not os.path.exists(inp_json):
+            pass
+        else:
+            fid = open(inp_json, 'r')
+            str1 = fid.read()
+            fid.close()
+            y = json.loads(str1)              
+            nobj = len(y['shapes'])
+            objects_list = y['shapes']
+            split_label(objects_list, fname, cls_name)
+        return
+
+def xxx(foder,cls_name):
+    def clean_folder(folder):
+        try:
+            os.mkdir(folder)
+        except:
+            pass
+        to_del = glob.glob(os.path.join(folder,'*.*'))
+        for f in to_del:
+            os.remove(f)
+    
+    def create_clean_folder(folder):
+        try:
+            os.mkdir(folder)
+        except:
+            pass
+        clean_folder(folder)
+
+    if os.name == 'nt':
+        ftypes = ['jpg', 'jpeg', 'tif', 'png', 'bmp']
     else:
-        fid = open(inp_json, 'r')
-        str1 = fid.read()
-        fid.close()
-        y = json.loads(str1)              
-        nobj = len(y['shapes'])
-        objects_list = y['shapes']
-        split_label(objects_list, img_file, cls_name)
-    return nobj, nobj_npy
+        ftypes = ['jpg', 'JPG', 'jpeg', 'JPEG', 'tif', 'TIF', 'png', 'PNG', 'bmp', 'BMP']
+    files = []
+    for ft in ftypes:
+        files.extend(glob.glob(os.path.join(foder, '*.'+ft)))
+    if len(files)==0:
+        msg = 'No image input files found, training could not start'
+        print(msg)
+        return
+    im_path = os.path.join(foder, 'slice', 'image')
+    ann_path = os.path.join(foder, 'slice', 'annotation')
+    create_clean_folder(os.path.join(foder, 'slice'))
+    create_clean_folder(ann_path)
+    create_clean_folder(im_path)
 
+    nf = len(files)
+    n_thread = mp.cpu_count() - 2
+    if n_thread<=0:
+        n_thread = 1
+    if n_thread > nf:
+        n_thread = nf
+    if n_thread > 3:
+        n_thread = 3
 
+    file_groups = []
+    for n in range((n_thread-1)):
+        file_groups.append(files[n*nf//n_thread: (n+1)*nf//n_thread])
+    file_groups.append(files[(n_thread-1)*nf//n_thread: ])
+
+    proc_group = []
+    for n in range(n_thread):
+        proc_group.append(mp.Process(target=mp_split, args=(file_groups[n],cls_name,)))
+
+    for n in range(n_thread):
+        proc_group[n].start()
+
+    for n in range(n_thread):
+        proc_group[n].join()
 
 def illustrate_mask(im_file_name, class_dict):
 
@@ -191,9 +255,7 @@ def get_class_name(img_files):
     return list(cls_dict.keys())
 
 if __name__=='__main__':
-    fname = R"C:\Users\echo\Pictures\20180313SA1_B05_6NW14C.tif"
-    dataset = rasterio.open(fname)
-    print(dataset.shape)
+    xxx(R"C:\Users\dva\unet5\weights\Squatter\TS", 'Squatter')
     quit()
 
     dir = '/mnt/crucial-ssd/home/insight/Pictures/lands_1963_house_ts'

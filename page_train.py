@@ -17,7 +17,6 @@ import time
 import re
 import json_conv
 import multi_tif
-import multiprocessing as mp
 
 tk_root = None
 
@@ -45,60 +44,13 @@ def create_clean_folder(folder):
     clean_folder(folder)
 
 
-def mp_split(files, cls_name):
-    for fname in files:
-        json_conv.split_for_training(fname, cls_name)
-
 def slice_for_train_folder():
     foder = askdirectory()
     if len(foder) == 0:
         return
     foder = os.path.normpath(foder)
-    if os.name == 'nt':
-        ftypes = ['jpg', 'jpeg', 'tif', 'png', 'bmp']
-    else:
-        ftypes = ['jpg', 'JPG', 'jpeg', 'JPEG', 'tif', 'TIF', 'png', 'PNG', 'bmp', 'BMP']
-    files = []
-    for ft in ftypes:
-        files.extend(glob(os.path.join(foder, '*.'+ft)))
-    if len(files)==0:
-        msg = 'No image input files found'
-        print(msg)
-        messagebox.showinfo("Training could not start", msg)
-        return
-
     cls_name = tk_root.tkvar.get()
-
-    im_path = os.path.join(foder, 'slice', 'image')
-    ann_path = os.path.join(foder, 'slice', 'annotation')
-    create_clean_folder(os.path.join(foder, 'slice'))
-    create_clean_folder(ann_path)
-    create_clean_folder(im_path)
-
-    nf = len(files)
-    n_thread = mp.cpu_count() - 2
-    if n_thread<=0:
-        n_thread = 1
-    if n_thread > nf:
-        n_thread = nf
-    if n_thread > 4:
-        n_thread = 4
-
-    file_groups = []
-    for n in range((n_thread-1)):
-        file_groups.append(files[n*nf//n_thread: (n+1)*nf//n_thread])
-    file_groups.append(files[(n_thread-1)*nf//n_thread: ])
-
-    proc_group = []
-    for n in range(n_thread):
-        proc_group.append(mp.Process(target=mp_split, args=(file_groups[n],cls_name,)))
-
-    for n in range(n_thread):
-        proc_group[n].start()
-
-    for n in range(n_thread):
-        proc_group[n].join()
-
+    json_conv.xxx(foder, cls_name)
     answer = messagebox.askquestion("Training dataset", 
         "Slicing completed, proceed ?")
     if answer == 'no':

@@ -2,10 +2,16 @@ import argparse
 import json
 from .data_utils.data_loader import image_segmentation_generator, \
     verify_segmentation_dataset
-import os
+import os,sys
 import glob
 import six
+import inspect
 
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+import json_conv
 
 def find_latest_checkpoint(checkpoints_path, fail_safe=True):
 
@@ -99,7 +105,9 @@ def train(model,
         print("Starting Epoch ", ep)
         model.fit_generator(train_gen, steps_per_epoch, epochs=1)
         if checkpoints_path is not None:
-            if ep%3 == 0:
-                model.save_weights(checkpoints_path + "." + str(ep))
             model.save_weights(checkpoints_path + ".weight")
+            if ep%2 == 0:
+                model.save_weights(checkpoints_path + "." + str(ep))
+                print('Recut training set')
+                json_conv.xxx(R"C:\Users\dva\unet5\weights\Squatter\TS", 'Squatter')
         print("Finished Epoch", ep)
