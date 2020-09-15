@@ -2,8 +2,7 @@ import json
 import cv2
 import numpy as np
 import os
-#import PIL.Image
-#from PIL import Image
+import skimage
 import guicfg as cfg
 import glob
 from importlib import reload
@@ -70,12 +69,13 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
         cv2.fillPoly(anno_im, [pts], (classid))
         ntotal_out += 1
 
-    #Note: Possible to insert rotation in here
-    # img = rotate(img, 10)
-    # anno_im = rotate(anno_im, 10)
+    ##Note: Possible to insert rotation in here
+    angle = random.randint(-30, 30)
+    img = skimage.transform.rotate(img, angle, resize=True, mode='constant', cval=125, preserve_range=True)
+    anno_im = skimage.transform.rotate(anno_im, angle, resize=True, mode='constant', cval=125, preserve_range=True)
 
-    for n in range(int(img_w/my_size)):
-        for m in range(int(img_h/my_size)):
+    for n in range(int(img.shape[1]/my_size)):
+        for m in range(int(img.shape[0]/my_size)):
     
             xstart = n * my_size + augmen_x
             xend   = xstart + my_size
@@ -88,7 +88,7 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
                 continue
             
             outname=remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d.jpg'%(
-                img_w,img_h,xstart,xend,ystart,yend)
+                img.shape[1],img.shape[0],xstart,xend,ystart,yend)
 
             sub_im = img[ystart:yend, xstart:xend, :]
             sub_anno = anno_im[ystart:yend, xstart:xend]
@@ -110,7 +110,6 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
             cv2.imwrite(outpath + '.png', sub_anno)
             outpath = path_insert_folde(remove_ext(outname) + '.tif', 'slice')
             outpath = path_insert_folde(outpath, 'image')
-            sub_im = sub_im[:,:,0:3]
             geotiff.imwrite(outpath,sub_im)
             
     print('Total output count', ntotal_out)
