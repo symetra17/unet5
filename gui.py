@@ -29,7 +29,7 @@ if __name__=='__main__':
         master.tk.call('set', '::tk::dialog::file::showHiddenVar', '0')
 
     file_path = os.path.dirname(os.path.abspath(__file__)) 
-    master.title('Insight Segmentation Tool   ' + file_path)
+    master.title('Insight A.I. Extraction Tool   ' + file_path)
     master.resizable(0,0)
 
     Image.MAX_IMAGE_PIXELS = None
