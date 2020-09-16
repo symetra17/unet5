@@ -37,8 +37,8 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
     augmen_x = random.randint(0, my_size//2)
     augmen_y = random.randint(0, my_size//2)
 
-    #img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
-    img = 200*np.random.rand(1000,15000,5)
+    img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
+    #img = 200*np.random.rand(1000,15000,5)
 
     anno_im = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
     ntotal_out = 0
@@ -82,8 +82,6 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
             if yend > img.shape[0]:
                 yend = img.shape[0]
             
-            
-            
 
             outname=remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d'%(
                 img.shape[1],img.shape[0],xstart,xend,ystart,yend)
@@ -119,15 +117,20 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
                 sub_anno = cv2.resize(sub_anno, None, fx=1/down_scale, fy=1/down_scale,
                         interpolation=0)
 
+            #cv2.imshow('',sub_im[:,:,0:3]/256)
+            #cv2.waitKey(0)
+
             if True:
                 # Some images contain large blank black or white area, and these 
                 # area should not be included in training.
                 if int(np.percentile(sub_im, 50)) < 0:
+                    print('remove 1')
                     continue
 
                 if int(np.percentile(sub_anno, 80)) == 0:
+                    print('remove 2')
                     continue
-
+            
             sub_im_0 = sub_im[:,:,0].copy()
             sub_im_0[sub_im_0<0] = 128.0
             sub_im[:,:,0] = sub_im_0

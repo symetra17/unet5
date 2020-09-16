@@ -56,10 +56,13 @@ def slice_for_train_folder():
     if answer == 'no':
         return
 
-    answer = messagebox.askquestion("Satrt New Training ?", 'Yes to start new or No to resume')
+    answer = messagebox.askquestion("Satrt New Training ?", 
+            'Yes to start new or No to resume')
     init_mode = 'new'
     if answer == 'no':
         init_mode = 'resume'
+    im_path = os.path.join(foder, 'slice', 'image')
+    ann_path = os.path.join(foder, 'slice', 'annotation')
     start_subprocess(im_path,ann_path,init_mode,cls_name)
         
 def slice_tif_folder():
