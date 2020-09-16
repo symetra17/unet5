@@ -50,7 +50,7 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
         except:
             classid = 0
             print('Unexpected class label: ', o['label'])
-
+            quit()
         cv2.fillPoly(anno_im, [pts], (classid))
         ntotal_out += 1
 
@@ -130,7 +130,7 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
                     #print('remove 1')
                     continue
 
-                if int(np.percentile(sub_anno, 80)) == 0:
+                if int(np.percentile(sub_anno, 99)) == 0:
                     #print('remove 2')
                     continue
             

@@ -12,6 +12,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 import json_conv
+from pathlib import Path
 
 def find_latest_checkpoint(checkpoints_path, fail_safe=True):
 
@@ -87,35 +88,44 @@ def train(model,
                   latest_checkpoint)
             model.load_weights(latest_checkpoint)
 
-    if verify_dataset:
-        print("Verifying training dataset")
-        verified = verify_segmentation_dataset(train_images, train_annotations, n_classes)
-        assert verified
-        if validate:
-            print("Verifying validation dataset")
-            verified = verify_segmentation_dataset(val_images, val_annotations, n_classes)
-            assert verified
+    #if verify_dataset:
+    #    print("Verifying training dataset")
+    #    verified = verify_segmentation_dataset(train_images, train_annotations, n_classes)
+    #    assert verified
+    #    if validate:
+    #        print("Verifying validation dataset")
+    #        verified = verify_segmentation_dataset(val_images, val_annotations, n_classes)
+    #        assert verified
 
-    train_gen = image_segmentation_generator(
-        train_images, train_annotations,  batch_size,  n_classes,
-        input_height, input_width, output_height, output_width,do_augment=True)
-
+    #print('Re-cut training set')
+    #path = Path(train_images)
+    #print(path.parent.parent)
+    #json_conv.xxx(path.parent.parent, 'Vehicles')
+    #print('Recut done.')
+    #train_gen = image_segmentation_generator(
+    #    train_images, train_annotations,  batch_size,  n_classes,
+    #    input_height, input_width, output_height, output_width,do_augment=True)
+    files = glob.glob(os.path.join(train_images,'*.*'))
+    nfiles = len(files)
+    steps_per_epoch = 1 + nfiles//batch_size
 
     for ep in range(epochs):
         print("Starting Epoch ", ep)
+
+        print('Re-cut training set')
+        path = Path(train_images)
+        print(path.parent.parent)
+        json_conv.xxx(path.parent.parent, 'Vehicles')
+        print('Recut done.')
+        train_gen = image_segmentation_generator(
+            train_images, train_annotations,  batch_size,  n_classes,
+            input_height, input_width, output_height, output_width,do_augment=True)
+        files = glob.glob(os.path.join(train_images,'*.*'))
+        nfiles = len(files)
+        steps_per_epoch = 1 + nfiles//batch_size
         model.fit_generator(train_gen, steps_per_epoch, epochs=1)
-        if checkpoints_path is not None:
-            
-            model.save_weights(checkpoints_path + ".weight")
-            if (ep+1)%4 == 0:
-                print('Saving weight')
-                model.save_weights(checkpoints_path + "." + str(ep))
-                print('Re-cut training set')
-                json_conv.xxx(R"C:\Users\dva\unet5\weights\Squatter\singleTS", 'Squatter')
-                train_gen = image_segmentation_generator(
-                    train_images, train_annotations,  batch_size,  n_classes,
-                    input_height, input_width, output_height, output_width,do_augment=True)
-                print('Recut done.')
-                print('')
-                print('')
-        print("Finished Epoch", ep)
+        model.save_weights(checkpoints_path + ".weight")            
+        if (ep+1)%4 == 0:
+            print('Saving weight')
+            model.save_weights(checkpoints_path + "." + str(ep))
+    print("Finished Epoch", ep)
