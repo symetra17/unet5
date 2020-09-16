@@ -105,9 +105,17 @@ def train(model,
         print("Starting Epoch ", ep)
         model.fit_generator(train_gen, steps_per_epoch, epochs=1)
         if checkpoints_path is not None:
+            
             model.save_weights(checkpoints_path + ".weight")
-            if ep%2 == 0:
+            if (ep+1)%4 == 0:
+                print('Saving weight')
                 model.save_weights(checkpoints_path + "." + str(ep))
-                print('Recut training set')
-                json_conv.xxx(R"C:\Users\dva\unet5\weights\Squatter\TS", 'Squatter')
+                print('Re-cut training set')
+                json_conv.xxx(R"C:\Users\dva\unet5\weights\Squatter\singleTS", 'Squatter')
+                train_gen = image_segmentation_generator(
+                    train_images, train_annotations,  batch_size,  n_classes,
+                    input_height, input_width, output_height, output_width,do_augment=True)
+                print('Recut done.')
+                print('')
+                print('')
         print("Finished Epoch", ep)

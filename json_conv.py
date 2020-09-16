@@ -56,12 +56,15 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
 
     try:
         if cfg.augm_rotation:
+            t0=time.time()
             angle = random.randint(cfg.augm_angle_range[0], cfg.augm_angle_range[1])
             img = skimage.transform.rotate(img, angle, resize=True, 
                     mode='constant', cval=-1.0,
                     preserve_range=True)
             anno_im = skimage.transform.rotate(anno_im, angle, resize=True, 
                     mode='constant', cval=0, preserve_range=True)
+            t1 = time.time()
+            print('rotation augmentation time:', int(t1-t0))
     except:
         pass
 
@@ -124,11 +127,11 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
                 # Some images contain large blank black or white area, and these 
                 # area should not be included in training.
                 if int(np.percentile(sub_im, 50)) < 0:
-                    print('remove 1')
+                    #print('remove 1')
                     continue
 
                 if int(np.percentile(sub_anno, 80)) == 0:
-                    print('remove 2')
+                    #print('remove 2')
                     continue
             
             sub_im_0 = sub_im[:,:,0].copy()
