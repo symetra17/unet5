@@ -123,7 +123,13 @@ def train(model,
         files = glob.glob(os.path.join(train_images,'*.*'))
         nfiles = len(files)
         steps_per_epoch = 1 + nfiles//batch_size
-        model.fit_generator(train_gen, steps_per_epoch, epochs=1)
+        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=1)
+
+        loss_history = history_callback.history["loss"]
+        fid=open('loss_history.txt','w+')
+        fid.write(fid,'%.5f\n',loss_history)
+        fid.close()
+        
         model.save_weights(checkpoints_path + ".weight")            
         if (ep+1)%4 == 0:
             print('Saving weight')
