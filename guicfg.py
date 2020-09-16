@@ -4,6 +4,9 @@ epochs = 200
 predict_output_format = 'jpg'   # option include jpg bmp
 MATLAB = False
 
+augm_rotation = True
+augm_angle_range = [-10, 10]
+
 cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar']
 
 def get(cls_name):

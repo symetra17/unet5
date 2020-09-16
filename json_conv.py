@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import os
 import skimage
+import skimage.transform
 import guicfg as cfg
 import glob
 from importlib import reload
@@ -11,7 +12,6 @@ import geotiff
 import multiprocessing as mp
 import random
 
-#PIL.Image.MAX_IMAGE_PIXELS = None
 
 def remove_ext(inp):
     # Remove filename extenstion, xxx123.jpg to xxx123
@@ -34,28 +34,13 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
 
     my_size = cls_cfg.my_size * down_scale
     random.seed()
-    augmen_x = random.randint(0, my_size)
-    augmen_y = random.randint(0, my_size)
+    augmen_x = random.randint(0, my_size//2)
+    augmen_y = random.randint(0, my_size//2)
 
-    img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
+    #img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
+    img = 200*np.random.rand(1000,15000,5)
 
-    print('padding')
-    # Pad image to 1024 divisible
-    img_h, img_w = img.shape[0:2]
-    if img_h%my_size != 0:
-        pady = my_size - (img_h%my_size)
-    else:
-        pady=0
-    if img_w%my_size != 0:
-        padx = my_size - (img_w%my_size)
-    else:
-        padx=0
-    img = np.pad(img, ((0,pady), (0,padx), (0,0) ) , mode='mean')
-    img_h, img_w = img.shape[0:2]
-    #
-
-    print('fill polygon')
-    anno_im = np.zeros((img_h, img_w), dtype=np.uint8)
+    anno_im = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
     ntotal_out = 0
     cls_sub_list = cfg.get(cls_name).cls_sub_list
     for o in inplist:
@@ -69,46 +54,108 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
         cv2.fillPoly(anno_im, [pts], (classid))
         ntotal_out += 1
 
-    ##Note: Possible to insert rotation in here
-    angle = random.randint(-30, 30)
-    img = skimage.transform.rotate(img, angle, resize=True, mode='constant', cval=125, preserve_range=True)
-    anno_im = skimage.transform.rotate(anno_im, angle, resize=True, mode='constant', cval=125, preserve_range=True)
+    try:
+        if cfg.augm_rotation:
+            angle = random.randint(cfg.augm_angle_range[0], cfg.augm_angle_range[1])
+            img = skimage.transform.rotate(img, angle, resize=True, 
+                    mode='constant', cval=-1.0,
+                    preserve_range=True)
+            anno_im = skimage.transform.rotate(anno_im, angle, resize=True, 
+                    mode='constant', cval=0, preserve_range=True)
+    except:
+        pass
 
-    for n in range(int(img.shape[1]/my_size)):
-        for m in range(int(img.shape[0]/my_size)):
+    for n in range(1+int(img.shape[1]/my_size)):
+        for m in range(1+int(img.shape[0]/my_size)):
     
             xstart = n * my_size + augmen_x
             xend   = xstart + my_size
-            if xend > img.shape[1]:
+            if xstart >= img.shape[1]:
                 continue
+            if xend > img.shape[1]:
+                xend = img.shape[1]
 
             ystart = m * my_size + augmen_y
             yend   = ystart + my_size
-            if yend > img.shape[0]:
+            if ystart >= img.shape[0]:
                 continue
+            if yend > img.shape[0]:
+                yend = img.shape[0]
             
-            outname=remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d.jpg'%(
+            
+            
+
+            outname=remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d'%(
                 img.shape[1],img.shape[0],xstart,xend,ystart,yend)
 
             sub_im = img[ystart:yend, xstart:xend, :]
             sub_anno = anno_im[ystart:yend, xstart:xend]
 
-            if remove_blank:
-                # Some images contain large blank black or white area, and these 
-                # area should not be included in training.
-                mv = sub_im.mean()
-                if mv==0 or mv==255:
-                    continue
+
+            # Pad image to 1024 divisible
+            sub_img_h, sub_img_w = sub_im.shape[0:2]
+            if sub_img_h%my_size != 0:
+                pady = my_size - (sub_img_h%my_size)
+            else:
+                pady=0
+            if sub_img_w%my_size != 0:
+                padx = my_size - (sub_img_w%my_size)
+            else:
+                padx=0
+            
+            sub_im = np.pad(sub_im, ((0,pady), (0,padx), (0,0) ) , 
+                            mode='constant',constant_values=-1.0)
+            sub_anno = np.pad(sub_anno, ((0,pady), (0,padx)))
+
+            
+            
+            assert sub_im.shape[0] == my_size
+            assert sub_im.shape[1] == my_size
+            assert sub_anno.shape[0] == my_size
+            assert sub_anno.shape[1] == my_size
+
             if down_scale != 1:
-                sub_im = cv2.resize(sub_im, None, fx=1/down_scale, fy=1/down_scale,
-                        interpolation=0)
+                sub_im = cv2.resize(sub_im, None, fx=1/down_scale, fy=1/down_scale)
                 sub_anno = cv2.resize(sub_anno, None, fx=1/down_scale, fy=1/down_scale,
                         interpolation=0)
-            outpath = path_insert_folde(remove_ext(outname), 'slice')
+
+            if True:
+                # Some images contain large blank black or white area, and these 
+                # area should not be included in training.
+                if int(np.percentile(sub_im, 50)) < 0:
+                    continue
+
+                if int(np.percentile(sub_anno, 80)) == 0:
+                    continue
+
+            sub_im_0 = sub_im[:,:,0].copy()
+            sub_im_0[sub_im_0<0] = 128.0
+            sub_im[:,:,0] = sub_im_0
+
+            sub_im_1 = sub_im[:,:,1].copy()
+            sub_im_1[sub_im_1<0] = 128.0
+            sub_im[:,:,1] = sub_im_1
+
+            sub_im_2 = sub_im[:,:,2].copy()
+            sub_im_2[sub_im_2<0] = 128.0
+            sub_im[:,:,2] = sub_im_2
+
+            sub_im_3 = sub_im[:,:,3].copy()
+            sub_im_3[sub_im_3<0] = 128.0
+            sub_im[:,:,3] = sub_im_3
+
+            if sub_im.shape[2] > 4:
+                sub_im_4 = sub_im[:,:,4].copy()
+                sub_im_4[sub_im_4<0] = 0
+                sub_im[:,:,4] = sub_im_4
+
+            
+            
+            outpath = path_insert_folde(outname, 'slice')
             outpath = path_insert_folde(outpath, 'annotation')
 
             cv2.imwrite(outpath + '.png', sub_anno)
-            outpath = path_insert_folde(remove_ext(outname) + '.tif', 'slice')
+            outpath = path_insert_folde(outname + '.tif', 'slice')
             outpath = path_insert_folde(outpath, 'image')
             geotiff.imwrite(outpath,sub_im)
             
@@ -254,7 +301,7 @@ def get_class_name(img_files):
     return list(cls_dict.keys())
 
 if __name__=='__main__':
-    xxx(R"C:\Users\dva\unet5\weights\Squatter\TS", 'Squatter')
+    xxx(R"C:\Users\dva\unet5\weights\Squatter\singleTS", 'Squatter')
     quit()
 
     dir = '/mnt/crucial-ssd/home/insight/Pictures/lands_1963_house_ts'
