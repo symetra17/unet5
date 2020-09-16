@@ -10,6 +10,7 @@ from tkinter import ttk
 import page_train
 import page_predict
 import page_utils
+import guicfg as cfg
 
 #import getmac
 #if getmac.get_mac_address() != "00:1b:21:bb:2c:72":
@@ -41,14 +42,16 @@ if __name__=='__main__':
     page2 = ttk.Frame(nb)
     page3 = ttk.Frame(nb)
     nb.add(page1, text='\n  PREDICT  \n')
-    nb.add(page2, text='\n  TRAINING  \n')
-    nb.add(page3, text='\n  DATA UTILS \n')
+    if cfg.show_training_page:
+        nb.add(page2, text='\n  TRAINING  \n')
+        nb.add(page3, text='\n  DATA UTILS \n')
     
     nb.grid(column=0)
 
     page_predict.build_page(page1)
-    page_train.build_page(page2)
-    page_utils.build_page(page3)
+    if cfg.show_training_page:
+        page_train.build_page(page2)
+        page_utils.build_page(page3)
 
     file_path = os.path.dirname(os.path.abspath(__file__))
     tmp = os.path.join(file_path,'tmp')

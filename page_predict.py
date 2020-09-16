@@ -165,8 +165,17 @@ def build_page(root):
     import json
     tk_root.cfg_editbox.insert(END, json.dumps(cfg.classes_dict))
 
+    choices = cfg.cls_list
+    tk_root.tkvar = StringVar(tk_root)
+    tk_root.tkvar.set('Farmland') # set the default option
+    style = ttk.Style()
+    style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
+    tk_root.popupMenu = OptionMenu(tk_root, tk_root.tkvar, *choices)
+    tk_root.popupMenu.config(width=8,font=('Helvetica',16))
+    tk_root.popupMenu.pack(pady=(10,10))
+
     btn0 = Button(root, text="  Select file", command=openimage, 
-            height=1, width=80,  
+            height=1, width=70,  
             font=('Helvetica', '20'))
     btn0.pack(padx=(100,100), pady=(50,50))
     
@@ -176,7 +185,7 @@ def build_page(root):
                 width="400")
     
     btn1 = Button(root, text=" Select folder", command=openfolder_predict, 
-            height=1, width=80, 
+            height=1, width=70, 
             font=('Helvetica', '20'))
     
     btn1.pack(pady=(10,10))
@@ -185,11 +194,3 @@ def build_page(root):
                 height="60",
                 width="400")
 
-    choices = cfg.cls_list
-    tk_root.tkvar = StringVar(tk_root)
-    tk_root.tkvar.set('Farmland') # set the default option
-    style = ttk.Style()
-    style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
-    tk_root.popupMenu = OptionMenu(tk_root, tk_root.tkvar, *choices)
-    tk_root.popupMenu.config(width=8,font=('Helvetica',16))
-    tk_root.popupMenu.pack(pady=(10,10))

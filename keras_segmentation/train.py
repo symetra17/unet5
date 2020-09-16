@@ -52,7 +52,7 @@ def train(model,
           auto_resume_checkpoint=False,
           load_weights=None,
           steps_per_epoch=512,
-          optimizer_name='adadelta'
+          cls_name = ''
           ):
 
     from .models.all_models import model_from_name
@@ -72,9 +72,8 @@ def train(model,
     output_height = model.output_height
     output_width = model.output_width
 
-    if optimizer_name is not None:
-        model.compile(loss='categorical_crossentropy',
-                      optimizer=optimizer_name,
+    model.compile(loss='categorical_crossentropy',
+                      optimizer='adadelta',
                       metrics=['accuracy'])
 
     if load_weights is not None and len(load_weights) > 0:
@@ -114,9 +113,9 @@ def train(model,
 
         print('Re-cut training set')
         path = Path(train_images)
-        print(path.parent.parent)
-        json_conv.xxx(path.parent.parent, 'Vehicles')
+        json_conv.xxx(path.parent.parent, cls_name)
         print('Recut done.')
+
         train_gen = image_segmentation_generator(
             train_images, train_annotations,  batch_size,  n_classes,
             input_height, input_width, output_height, output_width,do_augment=True)
@@ -126,10 +125,12 @@ def train(model,
         history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=1)
 
         loss_history = history_callback.history["loss"]
-        fid=open('loss_history.txt','w+')
-        fid.write(fid,'%.5f\n'%loss_history)
+        fid=open('loss_history.txt','a')
+        fid.write('epochs: %03d  '%ep)
+        fid.write(str(loss_history))
+        fid.write('\n')
         fid.close()
-        
+
         model.save_weights(checkpoints_path + ".weight")            
         if (ep+1)%4 == 0:
             print('Saving weight')

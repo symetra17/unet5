@@ -66,5 +66,6 @@ if __name__=='__main__':
         epochs = cfg.epochs,
         auto_resume_checkpoint=arc,
         steps_per_epoch = 512,
-        batch_size=4
+        batch_size = 4,
+        cls_name = cls_name
     )

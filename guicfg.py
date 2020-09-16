@@ -2,7 +2,7 @@ from collections import OrderedDict
 classes_dict = OrderedDict({'Squatter':1})
 epochs = 200
 predict_output_format = 'jpg'   # option include jpg bmp
-MATLAB = False
+show_training_page = True
 
 augm_rotation = True
 augm_angle_range = [-10, 10]
