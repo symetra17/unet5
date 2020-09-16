@@ -127,7 +127,7 @@ def train(model,
 
         loss_history = history_callback.history["loss"]
         fid=open('loss_history.txt','w+')
-        fid.write(fid,'%.5f\n',loss_history)
+        fid.write(fid,'%.5f\n'%loss_history)
         fid.close()
         
         model.save_weights(checkpoints_path + ".weight")            
