@@ -8,16 +8,15 @@ import datetime
 
 if __name__=='__main__':
     
-    if len(sys.argv) < 5:
-        print('Requires input argument, the training folder and the annotation folder and initial mode(new/resume) clsname')
+    if len(sys.argv) < 4:
+        print('Requires input argument, [training folder] [initial mode(new/resume)] [cls_name]')
         quit()
 
-    im_dir = sys.argv[1]
-    ann_dir = sys.argv[2]
+    src_dir = sys.argv[1]
     arc = False
-    if sys.argv[3] == 'resume':
+    if sys.argv[2] == 'resume':
         arc = True
-    cls_name = sys.argv[4]
+    cls_name = sys.argv[3]
     n_classes = 1 + len(cfg.get(cls_name).cls_sub_list)
     my_size = cfg.get(cls_name).my_size
     bands = cfg.get(cls_name).bands
@@ -30,8 +29,7 @@ if __name__=='__main__':
     set_session(sess)  # set this TensorFlow session as the default 
 
     fid = open('last_folder.txt','w')
-    fid.write(im_dir + '\n')
-    fid.write(ann_dir + '\n')
+    fid.write(src_dir)
     fid.close()
 
     fid = open('last_cls_name.txt','w')
@@ -51,8 +49,7 @@ if __name__=='__main__':
     fid.write('Class name:%s\n'%cls_name)
     fid.write('N Band    :%d\n'%bands)
     fid.write('N Class   :%d\n'%n_classes)
-    fid.write(im_dir + '\n')
-    fid.write(ann_dir + '\n')
+    fid.write(src_dir + '\n')
     fid.close()
 
     model = unet(bands,
@@ -60,8 +57,7 @@ if __name__=='__main__':
             input_height=my_size, 
             input_width =my_size)
     model.train(
-        train_images      = im_dir,
-        train_annotations = ann_dir,
+        train_src_dir      = src_dir,
         checkpoints_path = os.path.join('weights', cls_name, 'vanilla_unet_1'),
         epochs = cfg.epochs,
         auto_resume_checkpoint=arc,

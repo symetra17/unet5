@@ -50,57 +50,53 @@ def slice_for_train_folder():
         return
     foder = os.path.normpath(foder)
     cls_name = tk_root.tkvar.get()
-    json_conv.xxx(foder, cls_name)
-    answer = messagebox.askquestion("Training dataset", 
-        "Slicing completed, proceed ?")
-    if answer == 'no':
-        return
+    #json_conv.xxx(foder, cls_name, 'a')
+    #answer = messagebox.askquestion("Training dataset", 
+    #    "Slicing completed, proceed ?")
+    #if answer == 'no':
+    #    return
 
     answer = messagebox.askquestion("Satrt New Training ?", 
             'Yes to start new or No to resume')
     init_mode = 'new'
     if answer == 'no':
         init_mode = 'resume'
-    im_path = os.path.join(foder, 'slice', 'image')
-    ann_path = os.path.join(foder, 'slice', 'annotation')
-    start_subprocess(im_path,ann_path,init_mode,cls_name)
+    start_subprocess(foder,init_mode,cls_name)
         
-def slice_tif_folder():
-    foder = askdirectory()
-    if len(foder) == 0:
-        return
-    foder = os.path.normpath(foder)
-    multi_tif.process_tif_dir(foder)
-    answer = messagebox.askquestion("Training dataset",  '%s\nProceed ?'%foder)
-    if answer == 'no':
-        return
-
-    im_path = os.path.join(foder, 'slice', 'image')
-    ann_path = os.path.join(foder, 'slice', 'annotation')
-    
-    answer = messagebox.askquestion("Satrt New Training ?", 'Yes to start new or No to resume')
-    init_mode = 'new'
-    if answer == 'no':
-        init_mode = 'resume'
-    #start_subprocess(im_path,ann_path,init_mode,cls_name)
+#def slice_tif_folder():
+    #foder = askdirectory()
+    #if len(foder) == 0:
+    #    return
+    #foder = os.path.normpath(foder)
+    #multi_tif.process_tif_dir(foder)
+    #answer = messagebox.askquestion("Training dataset",  '%s\nProceed ?'%foder)
+    #if answer == 'no':
+    #    return
+    #
+    #im_path = os.path.join(foder, 'slice', 'image')
+    #ann_path = os.path.join(foder, 'slice', 'annotation')
+    #
+    #answer = messagebox.askquestion("Satrt New Training ?", 'Yes to start new or No to resume')
+    #init_mode = 'new'
+    #if answer == 'no':
+    #    init_mode = 'resume'
+    ##start_subprocess(im_path,ann_path,init_mode,cls_name)
 
 def select_raw_train_folder():
     foder = askdirectory()
     if len(foder) == 0:
         return
     foder = os.path.normpath(foder)
-    im_path = os.path.join(foder, 'image')
-    ann_path = os.path.join(foder, 'annotation')    
     init_mode = 'new'
     class_name = tk_root.tkvar.get()
-    start_subprocess(im_path,ann_path,init_mode,class_name)
+    start_subprocess(foder,init_mode,class_name)
 
-def start_subprocess(im_path,ann_path,init_mode,cls_name):
+def start_subprocess(path,init_mode,cls_name):
     if os.name == 'nt':
-        cmd_str1 = ['python', 'my_train.py', "%s"%im_path, "%s"%ann_path, init_mode, cls_name]
+        cmd_str1 = ['python', 'my_train.py', "%s"%path, init_mode, cls_name]
         subprocess.Popen(cmd_str1, shell=True)
     else:
-        subprocess.Popen(['python3 my_train.py "%s" "%s" %s %s'%(im_path, ann_path, init_mode, cls_name)],shell=True)
+        subprocess.Popen(['python3 my_train.py "%s" %s %s'%(path, init_mode, cls_name)],shell=True)
 
 def resume_training():
     fid = open('last_folder.txt','r')
@@ -110,13 +106,9 @@ def resume_training():
     cls_name = fid.read()
     cls_name = cls_name.rstrip()
     fid.close()
-    paths = str1.split('\n')
-    im_path = paths[0].rstrip()
-    ann_path = paths[1].rstrip()
-    start_subprocess(im_path,ann_path,'resume',cls_name)
+    start_subprocess(str1,'resume',cls_name)
 
 def build_page(root):
-    # Pre-tranning slice
     global tk_root 
     tk_root = root
 
@@ -132,11 +124,11 @@ def build_page(root):
             font=('Helvetica', '18'))
     btn.pack(pady=(20,30))
 
-    btn3 = Button(root, text="Select multi-layer TIF folder", 
-            command=slice_tif_folder,
-            height=1, 
-            width=100, 
-            font=('Helvetica', '18'))
+    #btn3 = Button(root, text="Select multi-layer TIF folder", 
+    #        command=slice_tif_folder,
+    #        height=1, 
+    #        width=100, 
+    #        font=('Helvetica', '18'))
     #btn3.pack(pady=(20,30))
 
     btn2 = Button(root, text=" Resume", 
@@ -161,9 +153,6 @@ def build_page(root):
     btn2.config(image=root.photo0450, compound="left",
         width="400",
         height="60")
-    btn3.config(image=photo03485, compound="left",
-        width="400",
-        height="60")
 
     btn3 = Button(root, text="No slice", 
             command=select_raw_train_folder,
@@ -177,7 +166,16 @@ def build_page(root):
 
     choices = cfg.cls_list
     root.tkvar = StringVar(root)
-    root.tkvar.set('Farmland') # set the default option
+
+    try:
+        fid = open('last_cls_name.txt','r')
+        cls_name = fid.read()
+        cls_name = cls_name.rstrip()
+    except:
+        cls_name = 'Farmland'
+        pass
+
+    root.tkvar.set(cls_name)
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
     root.popupMenu = OptionMenu(root, root.tkvar, *choices)

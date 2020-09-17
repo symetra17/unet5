@@ -11,7 +11,7 @@ from collections import OrderedDict
 import geotiff
 import multiprocessing as mp
 import random
-
+import time
 
 def remove_ext(inp):
     # Remove filename extenstion, xxx123.jpg to xxx123
@@ -22,8 +22,11 @@ def path_insert_folde(filename, folder):
     splited = os.path.split(filename)
     return os.path.join(splited[0], folder, splited[1])
 
+def get_rand_angle():
+    angle = random.randint(cfg.augm_angle_range[0], cfg.augm_angle_range[1])
+    return angle
 
-def split_label(inplist, im_file_name, cls_name, remove_blank=True):
+def split_label(inplist, im_file_name, cls_name, a_or_b):
 
     reload(cfg)
     cls_cfg = cfg.get(cls_name)
@@ -50,23 +53,30 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
         except:
             classid = 0
             print('Unexpected class label: ', o['label'])
-            quit()
         cv2.fillPoly(anno_im, [pts], (classid))
         ntotal_out += 1
 
-    try:
-        if cfg.augm_rotation:
-            t0=time.time()
-            angle = random.randint(cfg.augm_angle_range[0], cfg.augm_angle_range[1])
+    if cfg.augm_rotation:
+        random_bit = random.getrandbits(1)
+        if cfg.augm_rotation and bool(random_bit):      # we perform rotation for half of time, to save cpu resource
+            t0 = time.time()
+            angle = get_rand_angle()
             img = skimage.transform.rotate(img, angle, resize=True, 
-                    mode='constant', cval=-1.0,
-                    preserve_range=True)
+                    mode='constant', cval=-1.0, preserve_range=True)
+            np.save(os.path.splitext(im_file_name)[0] + '_im_rot', img)     # save it for use next time
             anno_im = skimage.transform.rotate(anno_im, angle, resize=True, 
                     mode='constant', cval=0, preserve_range=True)
+            np.save(os.path.splitext(im_file_name)[0] + '_anno_rot', anno_im)
             t1 = time.time()
-            print('rotation augmentation time:', int(t1-t0))
-    except:
-        pass
+            print('rotation augmentation time:', int(t1-t0), 'sec')
+        else:
+            print('load rotation backup')
+            fname_im = os.path.splitext(im_file_name)[0] + '_im_rot'
+            fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot'
+            if os.path.exists(fname_im) and os.path.exists(fname_anno):
+                img = np.load(fname_im)
+                anno_im = np.load(fname_anno)
+                print('load rotation backup done')
 
     for n in range(1+int(img.shape[1]/my_size)):
         for m in range(1+int(img.shape[0]/my_size)):
@@ -85,22 +95,20 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
             if yend > img.shape[0]:
                 yend = img.shape[0]
             
-
             outname=remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d'%(
                 img.shape[1],img.shape[0],xstart,xend,ystart,yend)
 
             sub_im = img[ystart:yend, xstart:xend, :]
             sub_anno = anno_im[ystart:yend, xstart:xend]
 
-
             # Pad image to 1024 divisible
             sub_img_h, sub_img_w = sub_im.shape[0:2]
-            if sub_img_h%my_size != 0:
-                pady = my_size - (sub_img_h%my_size)
+            if sub_img_h < my_size:
+                pady = my_size - sub_img_h
             else:
                 pady=0
-            if sub_img_w%my_size != 0:
-                padx = my_size - (sub_img_w%my_size)
+            if sub_img_w < my_size:
+                padx = my_size - sub_img_w
             else:
                 padx=0
             
@@ -108,8 +116,6 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
                             mode='constant',constant_values=-1.0)
             sub_anno = np.pad(sub_anno, ((0,pady), (0,padx)))
 
-            
-            
             assert sub_im.shape[0] == my_size
             assert sub_im.shape[1] == my_size
             assert sub_anno.shape[0] == my_size
@@ -155,19 +161,18 @@ def split_label(inplist, im_file_name, cls_name, remove_blank=True):
                 sub_im_4[sub_im_4<0] = 0
                 sub_im[:,:,4] = sub_im_4
 
-            
-            
-            outpath = path_insert_folde(outname, 'slice')
+                        
+            outpath = path_insert_folde(outname, 'slice'+a_or_b)
             outpath = path_insert_folde(outpath, 'annotation')
 
             cv2.imwrite(outpath + '.png', sub_anno)
-            outpath = path_insert_folde(outname + '.tif', 'slice')
+            outpath = path_insert_folde(outname + '.tif', 'slice'+a_or_b)
             outpath = path_insert_folde(outpath, 'image')
             geotiff.imwrite(outpath,sub_im)
             
     print('Total output count', ntotal_out)
     
-def mp_split(files, cls_name):
+def mp_split(files, cls_name, a_or_b):
     for fname in files:
         inp_json = remove_ext(fname) + '.json'
         if not os.path.exists(inp_json):
@@ -179,10 +184,12 @@ def mp_split(files, cls_name):
             y = json.loads(str1)              
             nobj = len(y['shapes'])
             objects_list = y['shapes']
-            split_label(objects_list, fname, cls_name)
+            split_label(objects_list, fname, cls_name, a_or_b)
         return
 
-def xxx(foder,cls_name):
+def xxx(foder, cls_name, a_or_b):
+
+
     def clean_folder(folder):
         try:
             os.mkdir(folder)
@@ -210,9 +217,9 @@ def xxx(foder,cls_name):
         msg = 'No image input files found, training could not start'
         print(msg)
         return
-    im_path = os.path.join(foder, 'slice', 'image')
-    ann_path = os.path.join(foder, 'slice', 'annotation')
-    create_clean_folder(os.path.join(foder, 'slice'))
+    im_path = os.path.join(foder, 'slice' + a_or_b, 'image')
+    ann_path = os.path.join(foder, 'slice' + a_or_b, 'annotation')
+    create_clean_folder(os.path.join(foder, 'slice' + a_or_b))
     create_clean_folder(ann_path)
     create_clean_folder(im_path)
 
@@ -232,7 +239,7 @@ def xxx(foder,cls_name):
 
     proc_group = []
     for n in range(n_thread):
-        proc_group.append(mp.Process(target=mp_split, args=(file_groups[n],cls_name,)))
+        proc_group.append(mp.Process(target=mp_split, args=(file_groups[n],cls_name,a_or_b,)))
 
     for n in range(n_thread):
         proc_group[n].start()
@@ -307,7 +314,7 @@ def get_class_name(img_files):
     return list(cls_dict.keys())
 
 if __name__=='__main__':
-    xxx(R"C:\Users\dva\unet5\weights\Squatter\singleTS", 'Squatter')
+    xxx(R"C:\Users\dva\unet5\weights\Squatter\singleTS", 'Squatter', 'a')
     quit()
 
     dir = '/mnt/crucial-ssd/home/insight/Pictures/lands_1963_house_ts'

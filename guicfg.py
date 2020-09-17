@@ -5,7 +5,7 @@ predict_output_format = 'jpg'   # option include jpg bmp
 show_training_page = True
 
 augm_rotation = True
-augm_angle_range = [-10, 10]
+augm_angle_range = [-30, 30]
 
 cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar']
 

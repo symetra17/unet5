@@ -36,8 +36,7 @@ def find_latest_checkpoint(checkpoints_path, fail_safe=True):
 
 
 def train(model,
-          train_images,          # image dir
-          train_annotations,     # annotation dir
+          train_src_dir,          # image and annotation 
           input_height=None,
           input_width=None,
           n_classes=None,
@@ -87,42 +86,24 @@ def train(model,
                   latest_checkpoint)
             model.load_weights(latest_checkpoint)
 
-    #if verify_dataset:
-    #    print("Verifying training dataset")
-    #    verified = verify_segmentation_dataset(train_images, train_annotations, n_classes)
-    #    assert verified
-    #    if validate:
-    #        print("Verifying validation dataset")
-    #        verified = verify_segmentation_dataset(val_images, val_annotations, n_classes)
-    #        assert verified
-
-    #print('Re-cut training set')
-    #path = Path(train_images)
-    #print(path.parent.parent)
-    #json_conv.xxx(path.parent.parent, 'Vehicles')
-    #print('Recut done.')
-    #train_gen = image_segmentation_generator(
-    #    train_images, train_annotations,  batch_size,  n_classes,
-    #    input_height, input_width, output_height, output_width,do_augment=True)
-    files = glob.glob(os.path.join(train_images,'*.*'))
-    nfiles = len(files)
-    steps_per_epoch = 1 + nfiles//batch_size
 
     for ep in range(epochs):
         print("Starting Epoch ", ep)
 
         print('Re-cut training set')
-        path = Path(train_images)
-        json_conv.xxx(path.parent.parent, cls_name)
-        print('Recut done.')
+        json_conv.xxx(train_src_dir, cls_name, 'a')
+
+        train_images = os.path.join(train_src_dir,'slice'+'a', 'image')
+        train_annotations = os.path.join(train_src_dir, 'slice'+'a', 'annotation')
 
         train_gen = image_segmentation_generator(
             train_images, train_annotations,  batch_size,  n_classes,
             input_height, input_width, output_height, output_width,do_augment=True)
-        files = glob.glob(os.path.join(train_images,'*.*'))
+        files = glob.glob(os.path.join(train_src_dir,'slice'+'a','image','*.*'))
         nfiles = len(files)
         steps_per_epoch = 1 + nfiles//batch_size
-        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=1)
+        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=4)
+
 
         loss_history = history_callback.history["loss"]
         fid=open('loss_history.txt','a')
@@ -135,4 +116,4 @@ def train(model,
         if (ep+1)%4 == 0:
             print('Saving weight')
             model.save_weights(checkpoints_path + "." + str(ep))
-    print("Finished Epoch", ep)
+    
