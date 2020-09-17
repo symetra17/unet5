@@ -94,13 +94,14 @@ def select_raw_train_folder():
 def start_subprocess(path,init_mode,cls_name):
     if os.name == 'nt':
         cmd_str1 = ['python', 'my_train.py', "%s"%path, init_mode, cls_name]
+        print(cmd_str1)
         subprocess.Popen(cmd_str1, shell=True)
     else:
         subprocess.Popen(['python3 my_train.py "%s" %s %s'%(path, init_mode, cls_name)],shell=True)
 
 def resume_training():
     fid = open('last_folder.txt','r')
-    str1 = fid.read()
+    str1 = fid.read().rstrip()
     fid.close()
     fid = open('last_cls_name.txt','r')
     cls_name = fid.read()
