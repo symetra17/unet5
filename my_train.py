@@ -1,9 +1,16 @@
+import tensorflow.python.util.deprecation as deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+
+
+
 from keras_segmentation.models.unet import vgg_unet, unet
 import guicfg as cfg
 import sys
 import os
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 import datetime
 
 if __name__=='__main__':

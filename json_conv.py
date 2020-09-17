@@ -26,6 +26,23 @@ def get_rand_angle():
     angle = random.randint(cfg.augm_angle_range[0], cfg.augm_angle_range[1])
     return angle
 
+def read_img_anno(im_file_name, cls_name):
+    img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
+    anno_im = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
+    ntotal_out = 0
+    cls_sub_list = cfg.get(cls_name).cls_sub_list
+    for o in inplist:
+        pts = np.array(o['points']).astype(np.int32)
+        try:
+            classid = cls_sub_list[o['label']]
+        except:
+            classid = 0
+            print('Unexpected class label: ', o['label'])
+        cv2.fillPoly(anno_im, [pts], (classid))
+        ntotal_out += 1
+    return img, anno_im, ntotal_out
+
+
 def split_label(inplist, im_file_name, cls_name, a_or_b):
 
     reload(cfg)
@@ -39,44 +56,33 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
     random.seed()
     augmen_x = random.randint(0, my_size//2)
     augmen_y = random.randint(0, my_size//2)
-
-    img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
-    #img = 200*np.random.rand(1000,15000,5)
-
-    anno_im = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
-    ntotal_out = 0
-    cls_sub_list = cfg.get(cls_name).cls_sub_list
-    for o in inplist:
-        pts = np.array(o['points']).astype(np.int32)
-        try:
-            classid = cls_sub_list[o['label']]
-        except:
-            classid = 0
-            print('Unexpected class label: ', o['label'])
-        cv2.fillPoly(anno_im, [pts], (classid))
-        ntotal_out += 1
-
-    if cfg.augm_rotation:
-        random_bit = random.getrandbits(1)
-        if cfg.augm_rotation and bool(random_bit):      # we perform rotation for half of time, to save cpu resource
+        
+    if not cfg.augm_rotation:
+        img, anno_im, ntotal_out = read_img_anno(im_file_name, cls_name)
+    else:
+        anglels = [-30, -15, 0, 15, 30]
+        print('loading rotation backup')
+        angle_idx = random.randint(0, len(anglels)-1)
+        fname_im = os.path.splitext(im_file_name)[0] + '_im_rot_%d'%angle_idx
+        fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%angle_idx
+        if os.path.exists(fname_im + '.npy') and os.path.exists(fname_anno + '.npy'):
+            pass
+        else:
             t0 = time.time()
-            angle = get_rand_angle()
-            img = skimage.transform.rotate(img, angle, resize=True, 
-                    mode='constant', cval=-1.0, preserve_range=True)
-            np.save(os.path.splitext(im_file_name)[0] + '_im_rot', img)     # save it for use next time
-            anno_im = skimage.transform.rotate(anno_im, angle, resize=True, 
-                    mode='constant', cval=0, preserve_range=True)
-            np.save(os.path.splitext(im_file_name)[0] + '_anno_rot', anno_im)
+            print('generating rotated image')
+            img, anno_im, ntotal_out = read_img_anno(im_file_name, cls_name)
+            for n, angle in enumerate(anglels):
+                img1 = skimage.transform.rotate(img, angle, resize=True, 
+                        mode='constant', cval=-1.0, preserve_range=True)
+                np.save(os.path.splitext(im_file_name)[0] + '_im_rot_%d'%n, img1)     # save it for use next time
+                anno_im1 = skimage.transform.rotate(anno_im, angle, resize=True, 
+                        mode='constant', cval=0, preserve_range=True)
+                np.save(os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%n, anno_im1)
             t1 = time.time()
             print('rotation augmentation time:', int(t1-t0), 'sec')
-        else:
-            print('load rotation backup')
-            fname_im = os.path.splitext(im_file_name)[0] + '_im_rot'
-            fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot'
-            if os.path.exists(fname_im) and os.path.exists(fname_anno):
-                img = np.load(fname_im)
-                anno_im = np.load(fname_anno)
-                print('load rotation backup done')
+        img = np.load(fname_im + '.npy')
+        anno_im = np.load(fname_anno + '.npy')
+        print('load rotation backup done')
 
     for n in range(1+int(img.shape[1]/my_size)):
         for m in range(1+int(img.shape[0]/my_size)):
@@ -170,7 +176,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             outpath = path_insert_folde(outpath, 'image')
             geotiff.imwrite(outpath,sub_im)
             
-    print('Total output count', ntotal_out)
+    
     
 def mp_split(files, cls_name, a_or_b):
     for fname in files:
@@ -229,8 +235,8 @@ def xxx(foder, cls_name, a_or_b):
         n_thread = 1
     if n_thread > nf:
         n_thread = nf
-    if n_thread > 3:
-        n_thread = 3
+    if n_thread > 2:
+        n_thread = 2
 
     file_groups = []
     for n in range((n_thread-1)):
