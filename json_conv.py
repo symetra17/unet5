@@ -12,6 +12,8 @@ import geotiff
 import multiprocessing as mp
 import random
 import time
+import tensorflow.python.util.deprecation as deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
 
 def remove_ext(inp):
     # Remove filename extenstion, xxx123.jpg to xxx123
@@ -80,6 +82,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                 np.save(os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%n, anno_im1)
             t1 = time.time()
             print('rotation augmentation time:', int(t1-t0), 'sec')
+        print('loading  ', fname_im)
         img = np.load(fname_im + '.npy')
         anno_im = np.load(fname_anno + '.npy')
         print('load rotation backup done')

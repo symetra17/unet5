@@ -7,10 +7,10 @@ from PIL import Image
 from PIL import ImageTk 
 from tkinter import ttk
 
-import page_train
+
 import page_predict
-import page_utils
 import guicfg as cfg
+
 
 #import getmac
 #if getmac.get_mac_address() != "00:1b:21:bb:2c:72":
@@ -49,8 +49,11 @@ if __name__=='__main__':
     nb.grid(column=0)
 
     page_predict.build_page(page1)
+
     if cfg.show_training_page:
+        import page_train
         page_train.build_page(page2)
+        import page_utils
         page_utils.build_page(page3)
 
     file_path = os.path.dirname(os.path.abspath(__file__))
