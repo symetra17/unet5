@@ -64,7 +64,7 @@ def split_image(img, outname, my_size):
     return out_fname_list, start_pos
 
 
-def single_predict(fname, class_name):
+def single_predict(fname, class_name, fname_dsm=None):
     src_fname = fname
     down_scale = cfg.get(class_name).down_scale
     my_size = cfg.get(class_name).my_size
@@ -73,6 +73,15 @@ def single_predict(fname, class_name):
 
     if down_scale > 1:
         im = geotiff.imread(fname)
+        assert len(im.shape) > 2        # color
+        assert im.shape[2] == 4         # 4 channels
+        if fname_dsm is not None:
+            dsm = geotiff.imread(fname_dsm)
+            assert len(dsm.shape) == 2
+            dsm = np.expand_dims(dsm, axis=2)
+            im = np.concatenate((im, dsm), axis=2)
+            assert im.shape[2] == 5         # 5 channels
+
         mul = 1/down_scale
         im = cv2.resize(im, None, fx=mul, fy=mul, interpolation=cv2.INTER_AREA)
         ds_fname = replace_ext(fname, '_dn_samp.tif')
@@ -117,9 +126,9 @@ def single_predict(fname, class_name):
         cp = img[0:h, 0:w, 0].astype(np.uint8).copy()
         np4ch[:,:,3] = cp   # fill alpha channel with detection result
         np4ch[:,:,0] = cp   # fill 1st channel with detection result
-        geotiff.generate_tif_alpha(np4ch, replace_ext(src_fname, '_geo.tif'),
+        geotiff.generate_tif_alpha(np4ch, replace_ext(src_fname, '_result_geo.tif'),
                     src_fname)
-        fff=replace_ext(src_fname, '_geo.tif')
+        fff=replace_ext(src_fname, '_result_geo.tif')
         out_shp_file = replace_ext(src_fname, '_shape')
         geotiff.polygonize(rasterTemp=fff, outShp=out_shp_file)
         shp_filter.add_area_single(os.path.join(out_shp_file,'predicted_object.shp'), 
@@ -169,7 +178,7 @@ def select_dom_folder():
 
     #datafile = gdal.Open(files[0], gdal.GA_ReadOnly)
     #print(dir(datafile))
-
+    files.sort()
     for fname in files:
         fname = os.path.normpath(fname)
         fname_body = os.path.split(fname)[-1]
@@ -191,9 +200,12 @@ def select_dsm_folder():
         return
     dsm_folder = fd
     tk_root.entry2.insert(10, dsm_folder)
+    for i in tk_root.tree.get_children():
+        tk_root.tree.delete(i)
 
     global dsm_files
     dsm_files = glob(os.path.join(fd,'*.tif'))
+    dsm_files.sort()
     for n in range(len(dom_files)):
         fname = dom_files[n]
         fname = os.path.normpath(fname)
@@ -203,8 +215,9 @@ def select_dsm_folder():
         rows = datafile.RasterYSize
         bands = datafile.RasterCount
         geoinformation = datafile.GetGeoTransform()
-        tk_root.tree.insert("",1,text=fname_body, tags=('oddrow',), 
+        tk_root.tree.insert("",END,text=fname_body, tags=('oddrow',), 
                         value=(cols, rows, bands, geoinformation))
+
         try:
             fname = dsm_files[n]
             fname = os.path.normpath(fname)
@@ -214,12 +227,25 @@ def select_dsm_folder():
             rows = datafile.RasterYSize
             bands = datafile.RasterCount
             geoinformation = datafile.GetGeoTransform()
-            tk_root.tree.insert("",1,text=fname_body, tags=('oddrow',),
+            tk_root.tree.insert("",END,text=fname_body, tags=('oddrow',),
                         value=(cols, rows, bands, geoinformation))
         except:
             print('number of file unmatch')
             pass
+        
     tk_root.tree.tag_configure('oddrow', background='orange')
+
+def start_predict():
+    class_name = tk_root.tkvar.get()
+    if class_name == 'Squatter':
+        assert len(dom_files) == len(dsm_files)
+        for n, dom_file in enumerate(dom_files):
+            dsm_file = dsm_files[n]
+            single_predict(dom_file, class_name, dsm_file)
+    else:
+        for dom_file in dom_files:
+                single_predict(dom_file, class_name)
+    messagebox.showinfo("Prediction completed", "Prediction completed\n\n\n\n")
 
 def menu_callback(event):
     if event == 'Squatter':
@@ -264,7 +290,7 @@ def build_page(root):
     btn0 = Button(root.left_frame1, text="  Select file", command=openimage, 
             height=1, width=btn_size,  
             font=('Helvetica', '20'))
-    btn0.pack(padx=(30,30), pady=(20,20))
+    #btn0.pack(padx=(30,30), pady=(20,20))
     
     tk_root.photo11877 = PhotoImage(file=os.path.join('icon', "slicemagic.png"))
     btn0.config(image=tk_root.photo11877, compound="left", 
@@ -278,8 +304,8 @@ def build_page(root):
             height=1, width=btn_size, 
             font=('Helvetica', '20'))
     
-    btn1.pack(pady=(10,10))
-    tk_root.photo09589 = PhotoImage(file=os.path.join('icon', "predictf.png"))
+    btn1.pack(padx=(30,30), pady=(10,10))
+    tk_root.photo09589 = PhotoImage(file=os.path.join('icon', "DOM.png"))
     btn1.config(image=tk_root.photo09589,compound="left", 
                 height="60",
                 width=btn_size)
@@ -300,7 +326,7 @@ def build_page(root):
                 width=btn_size)
     root.entry2['state'] = 'disable'
 
-    btn3 = Button(root.left_frame1, text="Start", command=openfolder_predict, 
+    btn3 = Button(root.left_frame1, text="   Start  ", command=start_predict, 
             height=1, width=btn_size, 
             font=('Helvetica', '20'))
     
@@ -310,7 +336,7 @@ def build_page(root):
                 height="60",
                 width=btn_size)
 
-    root.tree = ttk.Treeview(root)
+    root.tree = ttk.Treeview(root, height=28)
     root.tree.pack(side=RIGHT, padx=(20,20))
     root.tree["columns"]=("one","two","three", "four")
 
