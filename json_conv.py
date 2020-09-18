@@ -12,8 +12,8 @@ import geotiff
 import multiprocessing as mp
 import random
 import time
-import tensorflow.python.util.deprecation as deprecation
-deprecation._PRINT_DEPRECATION_WARNINGS = False
+
+
 
 def remove_ext(inp):
     # Remove filename extenstion, xxx123.jpg to xxx123
@@ -28,7 +28,7 @@ def get_rand_angle():
     angle = random.randint(cfg.augm_angle_range[0], cfg.augm_angle_range[1])
     return angle
 
-def read_img_anno(im_file_name, cls_name):
+def read_img_anno(inplist, im_file_name, cls_name):
     img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.
     anno_im = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
     ntotal_out = 0
@@ -60,7 +60,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
     augmen_y = random.randint(0, my_size//2)
         
     if not cfg.augm_rotation:
-        img, anno_im, ntotal_out = read_img_anno(im_file_name, cls_name)
+        img, anno_im, ntotal_out = read_img_anno(inplist, im_file_name, cls_name)
     else:
         anglels = [-30, -15, 0, 15, 30]
         print('loading rotation backup')
@@ -72,7 +72,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
         else:
             t0 = time.time()
             print('generating rotated image')
-            img, anno_im, ntotal_out = read_img_anno(im_file_name, cls_name)
+            img, anno_im, ntotal_out = read_img_anno(inplist, im_file_name, cls_name)
             for n, angle in enumerate(anglels):
                 img1 = skimage.transform.rotate(img, angle, resize=True, 
                         mode='constant', cval=-1.0, preserve_range=True)

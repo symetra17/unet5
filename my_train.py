@@ -1,8 +1,3 @@
-import tensorflow.python.util.deprecation as deprecation
-deprecation._PRINT_DEPRECATION_WARNINGS = False
-
-
-
 from keras_segmentation.models.unet import vgg_unet, unet
 import guicfg as cfg
 import sys
