@@ -1,8 +1,5 @@
 import guicfg as cfg
 import os
-#import tensorflow as tf
-
-from keras_segmentation.models.unet import unet
 
 #from keras_segmentation.train import find_latest_checkpoint
 #from keras.backend.tensorflow_backend import set_session
@@ -25,8 +22,8 @@ def remove_ext(inp):
 
 
 def init(n_classes, bands, my_size, checkpoint_path=None):
-
     global initalized, model, last_chkpt_path
+    from keras_segmentation.models.unet import unet
     if not initalized:
         model = unet(bands,
             n_classes = n_classes,

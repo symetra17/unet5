@@ -17,8 +17,11 @@ import numpy as np
 import math
 import geotiff
 import shp_filter
+import gdal
 
 tk_root = None
+dom_files = None
+dsm_files = None
 
 def path_insert_folde(filename, folder):
     splited = os.path.split(filename)
@@ -151,46 +154,179 @@ def openfolder_predict():
     for fname in files:
         single_predict(fname, class_name)
     messagebox.showinfo("Prediction completed", "Prediction completed")
-    
+
+def select_dom_folder():
+    global dom_folder
+    fd = askdirectory()
+    if len(fd) == 0:
+        return
+    dom_folder = fd
+    files = glob(os.path.join(fd,'*.tif'))
+    tk_root.entry1.insert(10, dom_folder)
+
+    for i in tk_root.tree.get_children():
+        tk_root.tree.delete(i)
+
+    #datafile = gdal.Open(files[0], gdal.GA_ReadOnly)
+    #print(dir(datafile))
+
+    for fname in files:
+        fname = os.path.normpath(fname)
+        fname_body = os.path.split(fname)[-1]
+        datafile = gdal.Open(fname, gdal.GA_ReadOnly)
+        cols = datafile.RasterXSize
+        rows = datafile.RasterYSize
+        bands = datafile.RasterCount
+        geoinformation = datafile.GetGeoTransform()
+        tk_root.tree.insert("",1,text=fname_body, value=(cols, rows, bands, geoinformation))
+
+    global dom_files
+    dom_files = files
+
+
+def select_dsm_folder():
+    global dsm_folder
+    fd = askdirectory()
+    if len(fd) == 0:
+        return
+    dsm_folder = fd
+    tk_root.entry2.insert(10, dsm_folder)
+
+    global dsm_files
+    dsm_files = glob(os.path.join(fd,'*.tif'))
+    for n in range(len(dom_files)):
+        fname = dom_files[n]
+        fname = os.path.normpath(fname)
+        fname_body = os.path.split(fname)[-1]
+        datafile = gdal.Open(fname, gdal.GA_ReadOnly)
+        cols = datafile.RasterXSize
+        rows = datafile.RasterYSize
+        bands = datafile.RasterCount
+        geoinformation = datafile.GetGeoTransform()
+        tk_root.tree.insert("",1,text=fname_body, tags=('oddrow',), 
+                        value=(cols, rows, bands, geoinformation))
+        try:
+            fname = dsm_files[n]
+            fname = os.path.normpath(fname)
+            fname_body = os.path.split(fname)[-1]
+            datafile = gdal.Open(fname, gdal.GA_ReadOnly)
+            cols = datafile.RasterXSize
+            rows = datafile.RasterYSize
+            bands = datafile.RasterCount
+            geoinformation = datafile.GetGeoTransform()
+            tk_root.tree.insert("",1,text=fname_body, tags=('oddrow',),
+                        value=(cols, rows, bands, geoinformation))
+        except:
+            print('number of file unmatch')
+            pass
+    tk_root.tree.tag_configure('oddrow', background='orange')
+
+def menu_callback(event):
+    if event == 'Squatter':
+        tk_root.btn2['state'] = 'normal'
+        tk_root.entry2['state'] = 'normal'
+    else:
+        tk_root.btn2['state'] = 'disable'
+        tk_root.entry2['state'] = 'disable'
 
 def build_page(root):
     global tk_root 
     tk_root = root
 
-    lb = Label(root, text='Class Name')
+    root.left_frame1 = Frame(root)
+    root.left_frame1.pack(side=LEFT)
+
+    root.frame1 = Frame(root.left_frame1)
+    root.frame1.pack()
+
+    root.text = Label(root.frame1, text='Class Name')
+    root.text.pack(side=LEFT)
+
+    #lb = Label(root, text='Class Name')
     #lb.pack(pady=(10,0))
-    cfg_editbox = Text(root, height=2)
+    #cfg_editbox = Text(root, height=2)
     #cfg_editbox.pack(padx=5)
-    tk_root.cfg_editbox = cfg_editbox
-    import json
-    tk_root.cfg_editbox.insert(END, json.dumps(cfg.classes_dict))
+    #tk_root.cfg_editbox = cfg_editbox
+    #import json
+    #tk_root.cfg_editbox.insert(END, json.dumps(cfg.classes_dict))
 
     choices = cfg.cls_list
     tk_root.tkvar = StringVar(tk_root)
     tk_root.tkvar.set('Farmland') # set the default option
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
-    tk_root.popupMenu = OptionMenu(tk_root, tk_root.tkvar, *choices)
-    tk_root.popupMenu.config(width=8,font=('Helvetica',16))
+    tk_root.popupMenu = OptionMenu(root.frame1, tk_root.tkvar, *choices, command=menu_callback)
+    #tk_root.popupMenu.config(width=8,font=('Helvetica',16))
     tk_root.popupMenu.pack(pady=(10,10))
 
-    btn0 = Button(root, text="  Select file", command=openimage, 
-            height=1, width=70,  
+    btn_size = 350
+
+    btn0 = Button(root.left_frame1, text="  Select file", command=openimage, 
+            height=1, width=btn_size,  
             font=('Helvetica', '20'))
-    btn0.pack(padx=(100,100), pady=(50,50))
+    btn0.pack(padx=(30,30), pady=(20,20))
     
     tk_root.photo11877 = PhotoImage(file=os.path.join('icon', "slicemagic.png"))
     btn0.config(image=tk_root.photo11877, compound="left", 
                 height="60",
-                width="400")
+                width=btn_size)
     
-    btn1 = Button(root, text=" Select folder", command=openfolder_predict, 
-            height=1, width=70, 
+    root.entry1 = Entry(root.left_frame1, width=50)
+    root.entry1.pack(pady=(20,5))
+
+    btn1 = Button(root.left_frame1, text=" Select DOM folder", command=select_dom_folder, 
+            height=1, width=btn_size, 
             font=('Helvetica', '20'))
     
     btn1.pack(pady=(10,10))
     tk_root.photo09589 = PhotoImage(file=os.path.join('icon', "predictf.png"))
     btn1.config(image=tk_root.photo09589,compound="left", 
                 height="60",
-                width="400")
+                width=btn_size)
 
+
+    root.entry2 = Entry(root.left_frame1, width=50)
+    root.entry2.pack(pady=(20,5))
+    btn2 = Button(root.left_frame1, text=" Select DSM folder", command=select_dsm_folder, 
+            height=1, width=btn_size, 
+            font=('Helvetica', '20'))    
+    btn2.pack(pady=(10,10))
+    root.btn2 = btn2
+    root.btn2['state'] = 'disable'
+
+    tk_root.photo619 = PhotoImage(file=os.path.join('icon', "DSM_sel.png"))
+    btn2.config(image=tk_root.photo619,compound="left", 
+                height="60",
+                width=btn_size)
+    root.entry2['state'] = 'disable'
+
+    btn3 = Button(root.left_frame1, text="Start", command=openfolder_predict, 
+            height=1, width=btn_size, 
+            font=('Helvetica', '20'))
+    
+    btn3.pack(pady=(10,30))
+    tk_root.photo064 = PhotoImage(file=os.path.join('icon', "start.png"))
+    btn3.config(image=tk_root.photo064,compound="left", 
+                height="60",
+                width=btn_size)
+
+    root.tree = ttk.Treeview(root)
+    root.tree.pack(side=RIGHT, padx=(20,20))
+    root.tree["columns"]=("one","two","three", "four")
+
+    root.tree.column("#0", width=320, minwidth=320, stretch=NO)
+    root.tree.column("one", width=50, minwidth=50, stretch=NO)
+    root.tree.column("two", width=50, minwidth=50)
+    root.tree.column("three", width=80, minwidth=50, stretch=NO)
+    root.tree.column("four", width=80, minwidth=50, stretch=NO)
+
+    root.tree.heading("#0",text="Name",anchor=W)
+    root.tree.heading("one", text="Width",anchor=W)
+    root.tree.heading("two", text="Height",anchor=W)
+    root.tree.heading("three", text="No. Bands",anchor=W)
+    root.tree.heading("four", text="Geo Info",anchor=W)
+
+    #folder1=tree.insert("", 1, "", text="Folder 1", values=("23-Jun-17 11:05","File folder",""))
+    #tree.insert("", 2, "", text="text_file.txt", values=("23-Jun-17 11:25","TXT file","1 KB"))
+    
+    root.tree.tag_configure('oddrow', background='orange')
