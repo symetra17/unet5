@@ -63,7 +63,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
         img, anno_im, ntotal_out = read_img_anno(inplist, im_file_name, cls_name)
     else:
         anglels = [-30, -15, 0, 15, 30]
-        print('loading rotation backup')
+        print('Loading rotation backup ', os.path.split(im_file_name)[-1])
         angle_idx = random.randint(0, len(anglels)-1)
         fname_im = os.path.splitext(im_file_name)[0] + '_im_rot_%d'%angle_idx
         fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%angle_idx
@@ -71,7 +71,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             pass
         else:
             t0 = time.time()
-            print('generating rotated image')
+            print('Generating rotated image: ', os.path.split(im_file_name)[-1])
             img, anno_im, ntotal_out = read_img_anno(inplist, im_file_name, cls_name)
             for n, angle in enumerate(anglels):
                 img1 = skimage.transform.rotate(img, angle, resize=True, 
@@ -82,10 +82,9 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                 np.save(os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%n, anno_im1)
             t1 = time.time()
             print('rotation augmentation time:', int(t1-t0), 'sec')
-        print('loading  ', fname_im)
         img = np.load(fname_im + '.npy')
         anno_im = np.load(fname_anno + '.npy')
-        print('load rotation backup done')
+        print('Load rotation backup done')
 
     for n in range(1+int(img.shape[1]/my_size)):
         for m in range(1+int(img.shape[0]/my_size)):
@@ -185,7 +184,8 @@ def mp_split(files, cls_name, a_or_b):
     for fname in files:
         inp_json = remove_ext(fname) + '.json'
         if not os.path.exists(inp_json):
-            pass
+            print('Error: Could not find label json file for ', fname)
+            quit()
         else:
             fid = open(inp_json, 'r')
             str1 = fid.read()
@@ -194,7 +194,6 @@ def mp_split(files, cls_name, a_or_b):
             nobj = len(y['shapes'])
             objects_list = y['shapes']
             split_label(objects_list, fname, cls_name, a_or_b)
-        return
 
 def xxx(foder, cls_name, a_or_b):
 
@@ -231,7 +230,6 @@ def xxx(foder, cls_name, a_or_b):
     create_clean_folder(os.path.join(foder, 'slice' + a_or_b))
     create_clean_folder(ann_path)
     create_clean_folder(im_path)
-
     nf = len(files)
     n_thread = mp.cpu_count() - 2
     if n_thread<=0:
@@ -240,12 +238,10 @@ def xxx(foder, cls_name, a_or_b):
         n_thread = nf
     if n_thread > 2:
         n_thread = 2
-
     file_groups = []
     for n in range((n_thread-1)):
         file_groups.append(files[n*nf//n_thread: (n+1)*nf//n_thread])
     file_groups.append(files[(n_thread-1)*nf//n_thread: ])
-
     proc_group = []
     for n in range(n_thread):
         proc_group.append(mp.Process(target=mp_split, args=(file_groups[n],cls_name,a_or_b,)))
