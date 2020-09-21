@@ -107,7 +107,7 @@ def single_predict(fname, class_name, fname_dsm=None):
     for f in slice_list:
         model_init.init(n_sub_cls, bands, my_size, str(chk_point_path))
         model_init.do_prediction(f)
-    
+    cv2.destroyWindow('Predict')
     recombine(fname, start_pos)
     res_file = recombine2(fname, start_pos)
 
@@ -233,7 +233,7 @@ def select_dsm_folder():
         
     tk_root.tree.tag_configure('oddrow', background='orange')
 
-def start_predict():
+def predict_thread():
     try:
         os.mkdir(os.path.join(dom_folder,'result'))
     except:
@@ -250,7 +250,16 @@ def start_predict():
     folder = os.path.join(dom_folder,'tmp')
     import shutil
     shutil.rmtree(folder)
+
+    tk_root.btn_start['state'] = 'normal'
+
     messagebox.showinfo("Prediction completed", "Prediction completed\n\n\n\n")
+
+def start_predict():
+    import threading
+    tk_root.btn_start['state'] = 'disable'
+    thd1 = threading.Thread(target=predict_thread)
+    thd1.start()
 
 def menu_callback(event):
     if event == 'Squatter':
@@ -331,15 +340,13 @@ def build_page(root):
                 width=btn_size)
     root.entry2['state'] = 'disable'
 
-    btn3 = Button(root.left_frame1, text="   Start  ", command=start_predict, 
+    tk_root.btn_start = Button(root.left_frame1, text="   Start  ", command=start_predict, 
             height=1, width=btn_size, 
-            font=('Helvetica', '20'))
-    
-    btn3.pack(pady=(10,30))
+            font=('Helvetica', '20'))    
+    tk_root.btn_start.pack(pady=(10,30))
     tk_root.photo064 = PhotoImage(file=os.path.join('icon', "start.png"))
-    btn3.config(image=tk_root.photo064,compound="left", 
-                height="60",
-                width=btn_size)
+    tk_root.btn_start.config(image=tk_root.photo064,compound="left", 
+                height="60", width=btn_size)
 
     root.tree = ttk.Treeview(root, height=28)
     root.tree.pack(side=RIGHT, padx=(20,20))

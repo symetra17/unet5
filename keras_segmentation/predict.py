@@ -94,7 +94,10 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     seg_img = seg_img//2 + img_overlay//2
 
     seg_img = cv2.resize(seg_img, (orininal_w, orininal_h), interpolation=cv2.INTER_NEAREST)
-    
+
+    cv2.imshow('Predict',seg_img/256)
+    cv2.waitKey(10)
+
     if out_fname is not None:
         #cv2.imwrite(out_fname, seg_img, [cv2.IMWRITE_JPEG_QUALITY, 97])
         #cv2.imwrite(out_fname, seg_img)

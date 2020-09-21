@@ -24,7 +24,7 @@ def remove_ext(inp):
 def init(n_classes, bands, my_size, checkpoint_path=None):
     global initalized, model, last_chkpt_path
     from keras_segmentation.models.unet import unet
-    if not initalized:
+    if (not initalized) or (checkpoint_path != last_chkpt_path):
         model = unet(bands,
             n_classes = n_classes,
             input_height = my_size, 
@@ -33,11 +33,6 @@ def init(n_classes, bands, my_size, checkpoint_path=None):
         model.load_weights(latest_m)
         last_chkpt_path = latest_m
         initalized = True
-    else:
-        if checkpoint_path != last_chkpt_path:
-            # Reload weight file, in case we do another prediction in using 
-            # different weight file
-            model.load_weights(checkpoint_path)
     
 def do_prediction(fname):
     out = model.predict_segmentation(
