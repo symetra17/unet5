@@ -98,9 +98,7 @@ def single_predict(fname, class_name, fname_dsm=None):
         return
     
     img = geotiff.imread(fname)
-    src_h = img.shape[0]
-    src_w = img.shape[1]
-
+    
     new_height = my_size * math.ceil(img.shape[0]/my_size)
     new_width = my_size * math.ceil(img.shape[1]/my_size)
     img_pad = np.zeros((new_height, new_width, img.shape[2]), img.dtype)
@@ -119,6 +117,10 @@ def single_predict(fname, class_name, fname_dsm=None):
         cv2.imwrite(res_file, img)
 
     if geotiff.is_geotif(src_fname):
+        npa = geotiff.imread(src_fname)
+        src_h = npa.shape[0]
+        src_w = npa.shape[1]
+
         np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
         cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
         np4ch[:,:,3] = cp   # fill alpha channel with detection result
