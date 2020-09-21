@@ -112,17 +112,16 @@ def batch_select_shp(current_path, output_path, area_threshold, Suffix):
                         select_shp_on_area(shp_path, output_shp_path, area_threshold)
                     
 
-def add_area_single(fname, area_threshold, Suffix,category):
+def add_area_single(fname, area_threshold, output_shp_path, category):
     shpName = os.path.splitext(fname)[0]
     shp_path = fname
     prj_path = shpName + ".prj"
-    output_shp_path = shpName + Suffix +".shp"
+    #output_shp_path = shpName + Suffix +".shp"
     sf = shapefile.Reader(shp_path)
     # when shp is polygon
     if sf.shapeType == 5:
         # if shp is not empty
         if len(sf.records()) > 0:
-            print(999)
             # if shp has projection information
             if os.path.exists(prj_path):
                 create_prj(shp_path, prj_path)

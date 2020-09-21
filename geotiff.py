@@ -90,7 +90,8 @@ def is_geotif(fname):
 def imread(fname):  # read like opencv
     from osgeo import gdal_array
     npa = gdal_array.LoadFile(fname)
-    npa = np.moveaxis(npa, 0, 2)
+    if len(npa.shape) > 2:              # if color image, put it to channel-last format
+        npa = np.moveaxis(npa, 0, 2)
     npa = npa.astype(np.float32)
     return npa
 

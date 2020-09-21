@@ -18,6 +18,7 @@ import math
 import geotiff
 import shp_filter
 import gdal
+from pathlib import Path
 
 tk_root = None
 dom_files = None
@@ -60,7 +61,7 @@ def split_image(img, outname, my_size):
             fullpath = path_insert_folde(fullpath, 'tmp')
             out_fname_list.append(fullpath)
             geotiff.imwrite(fullpath, sub_im)            
-    cv2.imwrite('slice_visual.bmp',slice_visual)
+    #cv2.imwrite('slice_visual.bmp',slice_visual)
     return out_fname_list, start_pos
 
 
@@ -89,28 +90,26 @@ def single_predict(fname, class_name, fname_dsm=None):
         geotiff.imwrite(fname, im)
     
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    chk_point_path = os.path.join(current_dir, 'weights', class_name,'vanilla_unet_1.weight')
+    chk_point_path = Path(current_dir, 'weights', class_name, 'vanilla_unet_1.weight')
     if not os.path.exists(chk_point_path):
         messagebox.showinfo("Prediction terminated", "Weight file not found")
         return
     
     img = geotiff.imread(fname)
-    
+    src_h = img.shape[0]
+    src_w = img.shape[1]
+
     new_height = my_size * math.ceil(img.shape[0]/my_size)
     new_width = my_size * math.ceil(img.shape[1]/my_size)
     img_pad = np.zeros((new_height, new_width, img.shape[2]), img.dtype)
     img_pad[0:img.shape[0], 0:img.shape[1], :] = img    
     slice_list,start_pos = split_image(img_pad, fname, my_size)
     for f in slice_list:
-        model_init.init(n_sub_cls, bands, my_size, chk_point_path)
+        model_init.init(n_sub_cls, bands, my_size, str(chk_point_path))
         model_init.do_prediction(f)
     
     recombine(fname, start_pos)
     res_file = recombine2(fname, start_pos)
-    
-    #import blur_bkgnd
-    #blur_bkgnd.blur_bkgnd(fname,)
-    #generate_tif_alpha
 
     img = cv2.imread(res_file)
     if down_scale > 1:
@@ -118,21 +117,20 @@ def single_predict(fname, class_name, fname_dsm=None):
         cv2.imwrite(res_file, img)
 
     if geotiff.is_geotif(src_fname):
-        pil_img = geotiff.imread(src_fname)
-        h = pil_img.shape[0]
-        w = pil_img.shape[1]
-        del pil_img
-        np4ch = np.zeros((h, w, 4), dtype=np.uint8)
-        cp = img[0:h, 0:w, 0].astype(np.uint8).copy()
+        np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
+        cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
         np4ch[:,:,3] = cp   # fill alpha channel with detection result
         np4ch[:,:,0] = cp   # fill 1st channel with detection result
-        geotiff.generate_tif_alpha(np4ch, replace_ext(src_fname, '_result_geo.tif'),
-                    src_fname)
-        fff=replace_ext(src_fname, '_result_geo.tif')
-        out_shp_file = replace_ext(src_fname, '_shape')
-        geotiff.polygonize(rasterTemp=fff, outShp=out_shp_file)
-        shp_filter.add_area_single(os.path.join(out_shp_file,'predicted_object.shp'), 
-                10, '_filtered',class_name)
+        out_path = Path(replace_ext(src_fname, '_result_geo.tif'))
+        out_path = Path(out_path.parent,'result',out_path.name)
+        geotiff.generate_tif_alpha(np4ch, str(out_path), src_fname)
+
+        result_mask_path = out_path
+        out_shp_file = Path(os.path.splitext(src_fname)[0] + '_shape')
+        out_shp_file = Path(out_shp_file.parent, 'result', Path(out_shp_file.name))
+        geotiff.polygonize(rasterTemp=str(result_mask_path), outShp=str(out_shp_file))
+        shp_filter.add_area_single(str(out_shp_file/'predicted_object.shp'), 
+                10, out_shp_file/'filtered'/'predicted_object.shp', class_name)
     else:
         print('is not a geotiff')
         
@@ -236,6 +234,10 @@ def select_dsm_folder():
     tk_root.tree.tag_configure('oddrow', background='orange')
 
 def start_predict():
+    try:
+        os.mkdir(os.path.join(dom_folder,'result'))
+    except:
+        pass
     class_name = tk_root.tkvar.get()
     if class_name == 'Squatter':
         assert len(dom_files) == len(dsm_files)
@@ -245,6 +247,9 @@ def start_predict():
     else:
         for dom_file in dom_files:
                 single_predict(dom_file, class_name)
+    folder = os.path.join(dom_folder,'tmp')
+    import shutil
+    shutil.rmtree(folder)
     messagebox.showinfo("Prediction completed", "Prediction completed\n\n\n\n")
 
 def menu_callback(event):

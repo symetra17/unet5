@@ -46,18 +46,19 @@ def recombine(src_img_file, start_pos):
     src_img = geotiff.imread(src_img_file)
     crop_size = (src_img.shape[0], src_img.shape[1])
     # Crop result images to remove zeros padding on the right and bottom size of the image.
-    geotiff.imwrite(remove_ext(src_img_file) + '_result.tif', 
-            img[0:crop_size[0], 0:crop_size[1], :])
+    outname = remove_ext(src_img_file) + '_result.tif'
+    outname = os.path.join(os.path.split(outname)[0],'result',os.path.split(outname)[1])
+    geotiff.imwrite(outname, img[0:crop_size[0], 0:crop_size[1], :])
 
-    outname = ''
-    if cfg.predict_output_format == 'jpg':
-        outname = remove_ext(src_img_file) + '_result.jpg'
-    elif cfg.predict_output_format == 'bmp':
-        outname = remove_ext(src_img_file) + '_result.bmp'
-    elif cfg.predict_output_format == 'png':
-        outname = remove_ext(src_img_file) + '_result.png'
-
-    return outname
+    #outname = ''
+    #if cfg.predict_output_format == 'jpg':
+    #    outname = remove_ext(src_img_file) + '_result.jpg'
+    #elif cfg.predict_output_format == 'bmp':
+    #    outname = remove_ext(src_img_file) + '_result.bmp'
+    #elif cfg.predict_output_format == 'png':
+    #    outname = remove_ext(src_img_file) + '_result.png'
+    #return outname
+    return
 
 def recombine2(src_img_file, start_pos):
     src_img_file = os.path.normpath(src_img_file)
@@ -112,6 +113,10 @@ def recombine2(src_img_file, start_pos):
     h = img[0:crop_size[0], 0:crop_size[1], 0].copy()
     h[h>0] = 255
     ofname = remove_ext(src_img_file) + '_result_bw.bmp'
+    a_part = os.path.split(ofname)[0]
+    b_part = 'result'
+    c_part = os.path.split(ofname)[1]
+    ofname = os.path.join(a_part,b_part,c_part)
     cv2.imwrite(ofname, h)
     return ofname
 
