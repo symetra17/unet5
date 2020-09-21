@@ -2,23 +2,25 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import askdirectory
 import os
+from pathlib import Path
+import shutil
 from glob import glob
 from PIL import ImageTk, Image 
-from recombine import recombine, recombine2
 import subprocess
-import tkinter.ttk
-from tkinter import messagebox
-import platform
-import model_init
-import shutil
 import cv2
-import guicfg as cfg
+import gdal
 import numpy as np
 import math
+import tkinter.ttk
+from tkinter import messagebox
+
+from recombine import recombine, recombine2
+import platform
+import model_init
+import guicfg as cfg
 import geotiff
 import shp_filter
-import gdal
-from pathlib import Path
+import threading
 
 tk_root = None
 dom_files = None
@@ -248,18 +250,16 @@ def predict_thread():
         for dom_file in dom_files:
                 single_predict(dom_file, class_name)
     folder = os.path.join(dom_folder,'tmp')
-    import shutil
     shutil.rmtree(folder)
-
     tk_root.btn_start['state'] = 'normal'
+    messagebox.showinfo("Prediction completed", "Prediction completed\n\n\n")
 
-    messagebox.showinfo("Prediction completed", "Prediction completed\n\n\n\n")
 
-def start_predict():
-    import threading
+def start_predict():    
     tk_root.btn_start['state'] = 'disable'
     thd1 = threading.Thread(target=predict_thread)
     thd1.start()
+    
 
 def menu_callback(event):
     if event == 'Squatter':
@@ -352,7 +352,7 @@ def build_page(root):
     root.tree.pack(side=RIGHT, padx=(20,20))
     root.tree["columns"]=("one","two","three", "four")
 
-    root.tree.column("#0", width=320, minwidth=320, stretch=NO)
+    root.tree.column("#0", width=300, minwidth=300, stretch=NO)
     root.tree.column("one", width=50, minwidth=50, stretch=NO)
     root.tree.column("two", width=50, minwidth=50)
     root.tree.column("three", width=80, minwidth=50, stretch=NO)
@@ -368,3 +368,4 @@ def build_page(root):
     #tree.insert("", 2, "", text="text_file.txt", values=("23-Jun-17 11:25","TXT file","1 KB"))
     
     root.tree.tag_configure('oddrow', background='orange')
+    
