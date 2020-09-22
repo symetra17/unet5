@@ -67,9 +67,6 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
         angle_idx = random.randint(0, len(anglels)-1)
         fname_im = os.path.splitext(im_file_name)[0] + '_im_rot_%d'%angle_idx
         fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%angle_idx
-        
-        print('loading rot backup ', fname_im)
-
         if os.path.exists(fname_im + '.npy') and os.path.exists(fname_anno + '.npy'):
             pass
         else:
@@ -141,7 +138,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             # area should not be included in training.
             if int(np.percentile(sub_im, 40)) < 0:      # too many rotation out of boundary area
                 continue
-            
+
             if int(np.percentile(sub_im, 60)) >= 255:   # too many white empty area
                 continue
 
