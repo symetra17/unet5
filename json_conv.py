@@ -63,15 +63,18 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
         img, anno_im, ntotal_out = read_img_anno(inplist, im_file_name, cls_name)
     else:
         anglels = [-30, -15, 0, 15, 30]
-        print('Loading rotation backup ', os.path.split(im_file_name)[-1])
+        #print('loading rot backup ', os.path.split(im_file_name)[-1])
         angle_idx = random.randint(0, len(anglels)-1)
         fname_im = os.path.splitext(im_file_name)[0] + '_im_rot_%d'%angle_idx
         fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%angle_idx
+        
+        print('loading rot backup ', fname_im)
+
         if os.path.exists(fname_im + '.npy') and os.path.exists(fname_anno + '.npy'):
             pass
         else:
             t0 = time.time()
-            print('Generating rotated image: ', os.path.split(im_file_name)[-1])
+            print('Generating rot img: ', os.path.split(im_file_name)[-1])
             img, anno_im, ntotal_out = read_img_anno(inplist, im_file_name, cls_name)
             for n, angle in enumerate(anglels):
                 img1 = skimage.transform.rotate(img, angle, resize=True, 
@@ -81,11 +84,11 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                         mode='constant', cval=0, preserve_range=True)
                 np.save(os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%n, anno_im1)
             t1 = time.time()
-            print('rotation augmentation time:', int(t1-t0), 'sec')
+            print('rotation augm time:', int(t1-t0), 'sec')
         img = np.load(fname_im + '.npy')
         anno_im = np.load(fname_anno + '.npy')
-        print('Load rotation backup done')
 
+    print('cropping')
     for n in range(1+int(img.shape[1]/my_size)):
         for m in range(1+int(img.shape[0]/my_size)):
     
@@ -134,19 +137,18 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                 sub_anno = cv2.resize(sub_anno, None, fx=1/down_scale, fy=1/down_scale,
                         interpolation=0)
 
-            #cv2.imshow('',sub_im[:,:,0:3]/256)
-            #cv2.waitKey(0)
+            # Some images contain large blank black or white area, and these 
+            # area should not be included in training.
+            if int(np.percentile(sub_im, 40)) < 0:      # too many rotation out of boundary area
+                continue
+            
+            if int(np.percentile(sub_im, 60)) >= 255:   # too many white empty area
+                continue
 
-            if True:
-                # Some images contain large blank black or white area, and these 
-                # area should not be included in training.
-                if int(np.percentile(sub_im, 50)) < 0:
-                    #print('remove 1')
-                    continue
-
-                if int(np.percentile(sub_anno, 99)) == 0:
-                    #print('remove 2')
-                    continue
+            if int(np.percentile(sub_anno, 99)) == 0:
+                v = random.random()
+                if v < cls_cfg.discard_empty:  # keep some of background picture
+                    continue                   # discard this picture
             
             sub_im_0 = sub_im[:,:,0].copy()
             sub_im_0[sub_im_0<0] = 128.0
@@ -176,8 +178,17 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             cv2.imwrite(outpath + '.png', sub_anno)
             outpath = path_insert_folde(outname + '.tif', 'slice'+a_or_b)
             outpath = path_insert_folde(outpath, 'image')
-            geotiff.imwrite(outpath,sub_im)
+            geotiff.imwrite(outpath, sub_im)
             
+            #sub_sub_im = sub_im[:,:,0:3]
+            #from pathlib import Path
+            #try:
+            #    os.mkdir(Path(Path(outpath).parent.parent, 'vieweable'))
+            #except:
+            #    pass
+            #opath2 = Path(Path(outpath).parent.parent, 'vieweable', Path(outpath).name)
+            #
+            #cv2.imwrite(str(opath2), sub_sub_im.astype(np.uint8))
     
     
 def mp_split(files, cls_name, a_or_b):
@@ -236,8 +247,9 @@ def xxx(foder, cls_name, a_or_b):
         n_thread = 1
     if n_thread > nf:
         n_thread = nf
-    if n_thread > 2:
-        n_thread = 2
+    n_thread_max = 3
+    if n_thread > n_thread_max:
+        n_thread = n_thread_max
     file_groups = []
     for n in range((n_thread-1)):
         file_groups.append(files[n*nf//n_thread: (n+1)*nf//n_thread])
@@ -319,7 +331,8 @@ def get_class_name(img_files):
     return list(cls_dict.keys())
 
 if __name__=='__main__':
-    xxx(R"C:\Users\dva\unet5\weights\Squatter\singleTS", 'Squatter', 'a')
+    xxx(R'C:\Users\echo\Code\unet5\weights\Solar\singleTS', 
+            'Solar', 'a')
     quit()
 
     dir = '/mnt/crucial-ssd/home/insight/Pictures/lands_1963_house_ts'
