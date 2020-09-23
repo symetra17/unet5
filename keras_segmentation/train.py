@@ -102,7 +102,7 @@ def train(model,
         files = glob.glob(os.path.join(train_src_dir,'slice'+'a','image','*.*'))
         nfiles = len(files)
         steps_per_epoch = 1 + nfiles//batch_size
-        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=4)
+        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=8)
 
 
         loss_history = history_callback.history["loss"]

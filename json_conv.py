@@ -76,9 +76,13 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             for n, angle in enumerate(anglels):
                 img1 = skimage.transform.rotate(img, angle, resize=True, 
                         mode='constant', cval=-1.0, preserve_range=True)
+                img1 = img1.astype(np.half)
                 np.save(os.path.splitext(im_file_name)[0] + '_im_rot_%d'%n, img1)     # save it for use next time
+                del img1
+
                 anno_im1 = skimage.transform.rotate(anno_im, angle, resize=True, 
                         mode='constant', cval=0, preserve_range=True)
+                anno_im1 = anno_im1.astype(np.half)
                 np.save(os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%n, anno_im1)
             t1 = time.time()
             print('rotation augm time:', int(t1-t0), 'sec')
@@ -143,6 +147,7 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                 continue
 
             if int(np.percentile(sub_anno, 99)) == 0:
+                
                 v = random.random()
                 if v < cls_cfg.discard_empty:  # keep some of background picture
                     continue                   # discard this picture
@@ -171,11 +176,11 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                         
             outpath = path_insert_folde(outname, 'slice'+a_or_b)
             outpath = path_insert_folde(outpath, 'annotation')
+            cv2.imwrite(outpath + '.png', sub_anno.astype(np.float32))
 
-            cv2.imwrite(outpath + '.png', sub_anno)
             outpath = path_insert_folde(outname + '.tif', 'slice'+a_or_b)
             outpath = path_insert_folde(outpath, 'image')
-            geotiff.imwrite(outpath, sub_im)
+            geotiff.imwrite(outpath, sub_im.astype(np.float32))
             
             #sub_sub_im = sub_im[:,:,0:3]
             #from pathlib import Path
@@ -328,7 +333,7 @@ def get_class_name(img_files):
     return list(cls_dict.keys())
 
 if __name__=='__main__':
-    xxx(R'C:\Users\echo\Code\unet5\weights\Solar\singleTS', 
+    xxx(R'C:\Users\dva\unet5\weights\Solar\TS', 
             'Solar', 'a')
     quit()
 
