@@ -2,7 +2,7 @@ from collections import OrderedDict
 classes_dict = OrderedDict({'Squatter':1})
 epochs = 200
 predict_output_format = 'jpg'   # option include jpg bmp
-show_training_page = True
+show_training_page = False
 
 augm_rotation = True
 augm_angle_range = [-30, 30]
@@ -37,7 +37,7 @@ def get(cls_name):
             down_scale = 1
             bands = 4
             cls_sub_list = OrderedDict({'Solar':1})
-            discard_empty = 0.8   # discard some training images without object, 0.8 for dropping 80% 
+            discard_empty = 0.98   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == 'Farmland':
         class cls_cfg:
             my_size = 512
