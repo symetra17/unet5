@@ -163,11 +163,30 @@ def gdal_imread_as_uint8(fname):
     img_tri_8[:,:,0] = img.astype(np.uint8)
     return img_tri_8
 
+def get_img_h_w(fname):
+    ds = gdal.Open(fname, gdal.GA_ReadOnly)
+    rb = ds.GetRasterBand(1)
+    img = rb.ReadAsArray()
+    return img.shape
+
 if __name__=='__main__':
     geotiff_ref_in = R"C:\Users\dva\Pictures\20191128SA1_B05_6NE19C.TIF"
-    
-    img = imread(R"C:\Users\echo\Pictures\20180313SA1_B05_6NW14C.tif")
-    cv2.imwrite('out.bmp', img[:,:,4])
+
+    fname = R"C:\Users\echo\Pictures\lands_inference_example\example2\DOM\20180103SA1_B05_6NW7A.TIF"
+    #fname = R"C:\Users\echo\Pictures\squatter result demo\downsampled_result.jpg"
+    import time
+
+    t0=time.time()
+    print(get_img_h_w(fname))
+    t1=time.time()
+    print(t1-t0)
+
+    t0=time.time()
+    img = imread(fname)    
+    t1=time.time()
+    print(t1-t0)
+    print(img.shape)
+    quit()
 
     #outname = 'out.tif'
     #np4ch = np.zeros((12000,15000,4),dtype=uint8)

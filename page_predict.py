@@ -13,6 +13,7 @@ import numpy as np
 import math
 import tkinter.ttk
 from tkinter import messagebox
+import time
 
 from recombine import recombine, recombine2
 import platform
@@ -120,9 +121,13 @@ def single_predict(fname, class_name, fname_dsm=None):
         cv2.imwrite(res_file, img)
 
     if geotiff.is_geotif(src_fname):
-        npa = geotiff.imread(src_fname)
-        src_h = npa.shape[0]
-        src_w = npa.shape[1]
+        #npa = geotiff.imread(src_fname)
+        #src_h = npa.shape[0]
+        #src_w = npa.shape[1]
+
+        shape1 = geotiff.get_img_h_w(src_fname)
+        src_h = shape1[0]
+        src_w = shape1[1]
 
         np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
         cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
@@ -244,6 +249,7 @@ def select_dsm_folder():
     write_table()
 
 def predict_thread():
+    t0=time.time()
     try:
         os.mkdir(os.path.join(dom_folder,'result'))
     except:
@@ -260,7 +266,8 @@ def predict_thread():
     folder = os.path.join(dom_folder,'tmp')
     shutil.rmtree(folder)
     tk_root.btn_start['state'] = 'normal'
-    messagebox.showinfo("Prediction completed", "Prediction completed\n\n\n")
+    t1=time.time()
+    messagebox.showinfo("Prediction completed", "Prediction completed\nTotal time %.0f\n\n"%(t1-t0))
 
 
 def start_predict():    
@@ -268,6 +275,7 @@ def start_predict():
     #thd1 = threading.Thread(target=predict_thread)
     #thd1.start()
     predict_thread()
+
 
 def menu_callback(event):
     if event == 'Squatter':
