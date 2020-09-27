@@ -14,6 +14,7 @@ import math
 import tkinter.ttk
 from tkinter import messagebox
 import time
+import multiprocessing as mp
 
 from recombine import recombine, recombine2
 import platform
@@ -68,6 +69,25 @@ def split_image(img, outname, my_size):
     #cv2.imwrite('slice_visual.bmp',slice_visual)
     return out_fname_list, start_pos
 
+def gen_shape_proc(src_fname, img, class_name):
+        shape1 = geotiff.get_img_h_w(src_fname)
+        src_h = shape1[0]
+        src_w = shape1[1]
+
+        np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
+        cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
+        np4ch[:,:,3] = cp   # fill alpha channel with detection result
+        np4ch[:,:,0] = cp   # fill 1st channel with detection result
+        out_path = Path(replace_ext(src_fname, '_result_geo.tif'))
+        out_path = Path(out_path.parent,'result',out_path.name)
+        geotiff.generate_tif_alpha(np4ch, str(out_path), src_fname)
+
+        result_mask_path = out_path
+        out_shp_file = Path(os.path.splitext(src_fname)[0] + '_shape')
+        out_shp_file = Path(out_shp_file.parent, 'result', Path(out_shp_file.name))
+        geotiff.polygonize(rasterTemp=str(result_mask_path), outShp=str(out_shp_file))
+        shp_filter.add_area_single(str(out_shp_file/'predicted_object.shp'), 
+                10, out_shp_file/'filtered'/'predicted_object.shp', class_name)
 
 def single_predict(fname, class_name, fname_dsm=None):
     src_fname = fname
@@ -125,24 +145,25 @@ def single_predict(fname, class_name, fname_dsm=None):
         #src_h = npa.shape[0]
         #src_w = npa.shape[1]
 
-        shape1 = geotiff.get_img_h_w(src_fname)
-        src_h = shape1[0]
-        src_w = shape1[1]
+        pid = mp.Process(target=gen_shape_proc, args=(src_fname, img, class_name,))
+        pid.start()
 
-        np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
-        cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
-        np4ch[:,:,3] = cp   # fill alpha channel with detection result
-        np4ch[:,:,0] = cp   # fill 1st channel with detection result
-        out_path = Path(replace_ext(src_fname, '_result_geo.tif'))
-        out_path = Path(out_path.parent,'result',out_path.name)
-        geotiff.generate_tif_alpha(np4ch, str(out_path), src_fname)
-
-        result_mask_path = out_path
-        out_shp_file = Path(os.path.splitext(src_fname)[0] + '_shape')
-        out_shp_file = Path(out_shp_file.parent, 'result', Path(out_shp_file.name))
-        geotiff.polygonize(rasterTemp=str(result_mask_path), outShp=str(out_shp_file))
-        shp_filter.add_area_single(str(out_shp_file/'predicted_object.shp'), 
-                10, out_shp_file/'filtered'/'predicted_object.shp', class_name)
+        #shape1 = geotiff.get_img_h_w(src_fname)
+        #src_h = shape1[0]
+        #src_w = shape1[1]
+        #np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
+        #cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
+        #np4ch[:,:,3] = cp   # fill alpha channel with detection result
+        #np4ch[:,:,0] = cp   # fill 1st channel with detection result
+        #out_path = Path(replace_ext(src_fname, '_result_geo.tif'))
+        #out_path = Path(out_path.parent,'result',out_path.name)
+        #geotiff.generate_tif_alpha(np4ch, str(out_path), src_fname)
+        #result_mask_path = out_path
+        #out_shp_file = Path(os.path.splitext(src_fname)[0] + '_shape')
+        #out_shp_file = Path(out_shp_file.parent, 'result', Path(out_shp_file.name))
+        #geotiff.polygonize(rasterTemp=str(result_mask_path), outShp=str(out_shp_file))
+        #shp_filter.add_area_single(str(out_shp_file/'predicted_object.shp'), 
+        #        10, out_shp_file/'filtered'/'predicted_object.shp', class_name)
     else:
         print('is not a geotiff')
         
