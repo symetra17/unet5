@@ -23,8 +23,9 @@ import shp_filter
 import threading
 
 tk_root = None
-dom_files = None
-dsm_files = None
+dom_files = []
+dsm_files = []
+dsm_folder = None
 
 def path_insert_folde(filename, folder):
     splited = os.path.split(filename)
@@ -88,6 +89,8 @@ def single_predict(fname, class_name, fname_dsm=None):
         mul = 1/down_scale
         im = cv2.resize(im, None, fx=mul, fy=mul, interpolation=cv2.INTER_AREA)
         ds_fname = replace_ext(fname, '_dn_samp.tif')
+        #fname1 = os.path.splitext(fname)[0] + '_dn_samp.tif'
+        #fname = str(Path(Path(fname1).parent, 'result', Path(fname1).name))
         fname = ds_fname
         geotiff.imwrite(fname, im)
     
@@ -166,48 +169,11 @@ def openfolder_predict():
         single_predict(fname, class_name)
     messagebox.showinfo("Prediction completed", "Prediction completed")
 
-def select_dom_folder():
-    global dom_folder
-    fd = askdirectory()
-    if len(fd) == 0:
-        return
-    dom_folder = fd
-    files = glob(os.path.join(fd,'*.tif'))
-    tk_root.entry1.insert(10, dom_folder)
+def write_table():
+    if len(dom_files) != len(dsm_files):
+        if dsm_folder is not None:
+            messagebox.showinfo("Input error", "Number of file unmatch")
 
-    for i in tk_root.tree.get_children():
-        tk_root.tree.delete(i)
-
-    #datafile = gdal.Open(files[0], gdal.GA_ReadOnly)
-    #print(dir(datafile))
-    files.sort()
-    for fname in files:
-        fname = os.path.normpath(fname)
-        fname_body = os.path.split(fname)[-1]
-        datafile = gdal.Open(fname, gdal.GA_ReadOnly)
-        cols = datafile.RasterXSize
-        rows = datafile.RasterYSize
-        bands = datafile.RasterCount
-        geoinformation = datafile.GetGeoTransform()
-        tk_root.tree.insert("",1,text=fname_body, value=(cols, rows, bands, geoinformation))
-
-    global dom_files
-    dom_files = files
-
-
-def select_dsm_folder():
-    global dsm_folder
-    fd = askdirectory()
-    if len(fd) == 0:
-        return
-    dsm_folder = fd
-    tk_root.entry2.insert(10, dsm_folder)
-    for i in tk_root.tree.get_children():
-        tk_root.tree.delete(i)
-
-    global dsm_files
-    dsm_files = glob(os.path.join(fd,'*.tif'))
-    dsm_files.sort()
     for n in range(len(dom_files)):
         fname = dom_files[n]
         fname = os.path.normpath(fname)
@@ -217,7 +183,7 @@ def select_dsm_folder():
         rows = datafile.RasterYSize
         bands = datafile.RasterCount
         geoinformation = datafile.GetGeoTransform()
-        tk_root.tree.insert("",END,text=fname_body, tags=('oddrow',), 
+        tk_root.tree.insert("",END,text='(DOM) '+fname_body, tags=('oddrow',), 
                         value=(cols, rows, bands, geoinformation))
 
         try:
@@ -229,13 +195,53 @@ def select_dsm_folder():
             rows = datafile.RasterYSize
             bands = datafile.RasterCount
             geoinformation = datafile.GetGeoTransform()
-            tk_root.tree.insert("",END,text=fname_body, tags=('oddrow',),
+            tk_root.tree.insert("",END,text=('(DSM) ') + fname_body, tags=('oddrow',),
                         value=(cols, rows, bands, geoinformation))
         except:
             print('number of file unmatch')
-            pass
-        
-    tk_root.tree.tag_configure('oddrow', background='orange')
+            #messagebox.showinfo("Input error", "Number of file unmatch")
+
+
+def select_dom_folder():
+    global dom_folder
+    global dom_files
+    fd = askdirectory()
+    if len(fd) == 0:
+        return
+    dom_folder = fd
+    files = glob(os.path.join(fd,'*.tif'))
+
+    tk_root.entry1.delete(0, END)
+    tk_root.entry1.insert(10, dom_folder)
+
+    for i in tk_root.tree.get_children():
+        tk_root.tree.delete(i)
+
+    #datafile = gdal.Open(files[0], gdal.GA_ReadOnly)
+    #print(dir(datafile))
+    files.sort()
+    dom_files = []
+    for fname in files:
+        if '_dn_samp' not in fname:
+            dom_files.append(fname)
+    write_table()
+
+
+def select_dsm_folder():
+    global dsm_folder
+    fd = askdirectory()
+    if len(fd) == 0:
+        return
+    dsm_folder = fd
+    tk_root.entry2.delete(0, END)
+    tk_root.entry2.insert(10, dsm_folder)
+    for i in tk_root.tree.get_children():
+        tk_root.tree.delete(i)
+
+    global dsm_files
+    dsm_files = glob(os.path.join(fd,'*.tif'))
+    dsm_files.sort()
+    write_table()
 
 def predict_thread():
     try:
@@ -259,9 +265,9 @@ def predict_thread():
 
 def start_predict():    
     tk_root.btn_start['state'] = 'disable'
-    thd1 = threading.Thread(target=predict_thread)
-    thd1.start()
-    
+    #thd1 = threading.Thread(target=predict_thread)
+    #thd1.start()
+    predict_thread()
 
 def menu_callback(event):
     if event == 'Squatter':
@@ -313,7 +319,7 @@ def build_page(root):
                 height="60",
                 width=btn_size)
     
-    root.entry1 = Entry(root.left_frame1, width=50)
+    root.entry1 = Entry(root.left_frame1, width=60)
     root.entry1.pack(pady=(20,5))
 
     btn1 = Button(root.left_frame1, text=" Select DOM folder", command=select_dom_folder, 
@@ -327,7 +333,7 @@ def build_page(root):
                 width=btn_size)
 
 
-    root.entry2 = Entry(root.left_frame1, width=50)
+    root.entry2 = Entry(root.left_frame1, width=60)
     root.entry2.pack(pady=(20,5))
     btn2 = Button(root.left_frame1, text=" Select DSM folder", command=select_dsm_folder, 
             height=1, width=btn_size, 
