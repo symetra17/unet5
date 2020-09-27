@@ -93,6 +93,7 @@ def imread(fname):  # read like opencv
     if len(npa.shape) > 2:              # if color image, put it to channel-last format
         npa = np.moveaxis(npa, 0, 2)
     npa = npa.astype(np.float32)
+    npa = np.nan_to_num(npa)
     return npa
 
 def imwrite(fname,npa):
@@ -163,14 +164,6 @@ def gdal_imread_as_uint8(fname):
     return img_tri_8
 
 if __name__=='__main__':
-    fname = R"C:\Users\echo\Code\unet5\weights\5stack\20180313SA1_B05_6NW14C.tif"
-    img = gdal_array.LoadFile(fname)
-    img = img[4,:,:]
-    img = img.astype(np.uint8)
-    gdal_array.SaveArray(img, R"C:\Users\echo\Code\unet5\weights\5stack\20180313SA1_B05_6NW14C_3ch.tif", 
-                    format="bmp")
-    quit()
-
     geotiff_ref_in = R"C:\Users\dva\Pictures\20191128SA1_B05_6NE19C.TIF"
     
     img = imread(R"C:\Users\echo\Pictures\20180313SA1_B05_6NW14C.tif")
