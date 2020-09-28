@@ -44,17 +44,6 @@ def split_image(outname, my_size):
 
     img = geotiff.imread(outname)
 
-    new_folder = os.path.join(os.path.split(outname)[0], 'tmp')
-    try:
-        shutil.rmtree(new_folder)
-    except:
-        pass
-    try:
-        os.mkdir(new_folder)
-    except:
-        print('could not create tmp folder')
-        quit()
-        pass
     out_fname_list = []
     img_h, img_w = img.shape[:2]
     
@@ -84,7 +73,7 @@ def split_image(outname, my_size):
             fullpath = path_insert_folde(fullpath, 'tmp')
             out_fname_list.append(fullpath)
             geotiff.imwrite(fullpath, sub_im)
-    cv2.imwrite('slice_visual.bmp',slice_visual)
+    #cv2.imwrite('slice_visual.bmp',slice_visual)
     return out_fname_list, start_pos
 
 def gen_shape_proc(src_fname, img, class_name):
@@ -268,21 +257,58 @@ def select_dsm_folder():
     dsm_files.sort()
     write_table()
 
+
+
+
 def predict_thread():
     t0=time.time()
     try:
         os.mkdir(os.path.join(dom_folder,'result'))
     except:
         pass
+
+    new_folder = folder = os.path.join(dom_folder,'tmp')  #os.path.join(os.path.split(outname)[0], 'tmp')
+    try:
+        shutil.rmtree(new_folder)
+    except:
+        pass
+    try:
+        os.mkdir(new_folder)
+    except:
+        print('could not create tmp folder')
+        quit()
+        pass
+
+
     class_name = tk_root.tkvar.get()
+    pid_ls = []
     if class_name == 'Squatter':
         assert len(dom_files) == len(dsm_files)
         for n, dom_file in enumerate(dom_files):
             dsm_file = dsm_files[n]
             single_predict(dom_file, class_name, dsm_file)
+
+            #pid = mp.Process(target=single_predict, args=(dom_file, class_name, dsm_file,))
+            #pid.start()
+            #pid_ls.append(pid)
+            #if len(pid_ls) > 1:
+            #    pid_ls.pop(0).join()
+        for pid in pid_ls:
+            pid.join()
     else:
         for dom_file in dom_files:
-                single_predict(dom_file, class_name)
+            #single_predict(dom_file, class_name)
+
+            pid = mp.Process(target=single_predict, args=(dom_file, class_name,))
+            pid.start()
+            pid_ls.append(pid)
+            if len(pid_ls) > 1:
+                pid_ls.pop(0).join()
+        for pid in pid_ls:
+            pid.join()
+
+            
+
     folder = os.path.join(dom_folder,'tmp')
     shutil.rmtree(folder)
     tk_root.btn_start['state'] = 'normal'
