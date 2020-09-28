@@ -40,33 +40,51 @@ def replace_ext(inp, new_ext):
     result = os.path.splitext(inp)[0] + new_ext
     return result
 
-def split_image(img, outname, my_size):
+def split_image(outname, my_size):
+
+    img = geotiff.imread(outname)
+
     new_folder = os.path.join(os.path.split(outname)[0], 'tmp')
     try:
         shutil.rmtree(new_folder)
     except:
         pass
-    os.mkdir(new_folder)
+    try:
+        os.mkdir(new_folder)
+    except:
+        print('could not create tmp folder')
+        quit()
+        pass
     out_fname_list = []
     img_h, img_w = img.shape[:2]
-    slice_visual = np.zeros((img_h,img_w,3),dtype=np.uint8)
+    
     n_overlap = 40
-    xstart_list = range(0, img_w-my_size, my_size-n_overlap)
-    ystart_list = range(0, img_h-my_size, my_size-n_overlap)
+    xstart_list = range(0, img_w, my_size-n_overlap)
+    ystart_list = range(0, img_h, my_size-n_overlap)
+
+    # expand the image so it size cover boundary case
+    canvas = 128*np.ones((img.shape[0] + my_size, 
+                          img.shape[1] + my_size, 
+                          img.shape[2]), dtype=img.dtype)
+    canvas[0:img.shape[0], 0:img.shape[1], :] = img
+    img = canvas
+
+    slice_visual = np.zeros((img.shape[0],img.shape[1],3),dtype=np.uint8)
+    cv2.rectangle(slice_visual,(0,0),(img_w,img_h), (0,0,255), 3)
+
     start_pos = []
     for xstart in xstart_list:
         xend   = xstart + my_size
         for ystart in ystart_list:
-            yend   = ystart + my_size
+            yend = ystart + my_size
             start_pos.append((xstart,ystart))
             cv2.rectangle(slice_visual,(xstart,ystart),(xend-1,yend-1),(255,255,255),1)
             sub_im = img[ystart:yend, xstart:xend, :]
-            fullpath = remove_ext(outname) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d.tif'%(img_w,img_h,
-                    xstart,xend,ystart,yend)
+            fullpath = remove_ext(outname) + '_X_%d_%d_Y_%d_%d.tif'%(xstart,xend,ystart,yend)
             fullpath = path_insert_folde(fullpath, 'tmp')
             out_fname_list.append(fullpath)
-            geotiff.imwrite(fullpath, sub_im)            
-    #cv2.imwrite('slice_visual.bmp',slice_visual)
+            geotiff.imwrite(fullpath, sub_im)
+    cv2.imwrite('slice_visual.bmp',slice_visual)
     return out_fname_list, start_pos
 
 def gen_shape_proc(src_fname, img, class_name):
@@ -121,13 +139,14 @@ def single_predict(fname, class_name, fname_dsm=None):
         messagebox.showinfo("Prediction terminated", "Weight file not found")
         return
     
-    img = geotiff.imread(fname)
-    
-    new_height = my_size * math.ceil(img.shape[0]/my_size)
-    new_width = my_size * math.ceil(img.shape[1]/my_size)
-    img_pad = np.zeros((new_height, new_width, img.shape[2]), img.dtype)
-    img_pad[0:img.shape[0], 0:img.shape[1], :] = img    
-    slice_list,start_pos = split_image(img_pad, fname, my_size)
+    #new_height = my_size * math.ceil(img.shape[0]/my_size)
+    #new_width = my_size * math.ceil(img.shape[1]/my_size)
+    #img_pad = np.zeros((new_height, new_width, img.shape[2]), img.dtype)
+    #img_pad[0:img.shape[0], 0:img.shape[1], :] = img
+    #slice_list,start_pos = split_image(img_pad, fname, my_size)
+
+    slice_list,start_pos = split_image(fname, my_size)
+
     for f in slice_list:
         model_init.init(n_sub_cls, bands, my_size, str(chk_point_path))
         model_init.do_prediction(f)
@@ -141,32 +160,12 @@ def single_predict(fname, class_name, fname_dsm=None):
         cv2.imwrite(res_file, img)
 
     if geotiff.is_geotif(src_fname):
-        #npa = geotiff.imread(src_fname)
-        #src_h = npa.shape[0]
-        #src_w = npa.shape[1]
-
         pid = mp.Process(target=gen_shape_proc, args=(src_fname, img, class_name,))
         pid.start()
-
-        #shape1 = geotiff.get_img_h_w(src_fname)
-        #src_h = shape1[0]
-        #src_w = shape1[1]
-        #np4ch = np.zeros((src_h, src_w, 4), dtype=np.uint8)
-        #cp = img[0:src_h, 0:src_w, 0].astype(np.uint8).copy()
-        #np4ch[:,:,3] = cp   # fill alpha channel with detection result
-        #np4ch[:,:,0] = cp   # fill 1st channel with detection result
-        #out_path = Path(replace_ext(src_fname, '_result_geo.tif'))
-        #out_path = Path(out_path.parent,'result',out_path.name)
-        #geotiff.generate_tif_alpha(np4ch, str(out_path), src_fname)
-        #result_mask_path = out_path
-        #out_shp_file = Path(os.path.splitext(src_fname)[0] + '_shape')
-        #out_shp_file = Path(out_shp_file.parent, 'result', Path(out_shp_file.name))
-        #geotiff.polygonize(rasterTemp=str(result_mask_path), outShp=str(out_shp_file))
-        #shp_filter.add_area_single(str(out_shp_file/'predicted_object.shp'), 
-        #        10, out_shp_file/'filtered'/'predicted_object.shp', class_name)
     else:
         print('is not a geotiff')
-        
+
+
 def openimage():
     fname = askopenfilename(filetypes=(
         ('Image file', '*.jpg *.JPG *.jpeg *.JPEG *.tif *.bmp *.png'),
@@ -405,4 +404,20 @@ def build_page(root):
     #tree.insert("", 2, "", text="text_file.txt", values=("23-Jun-17 11:25","TXT file","1 KB"))
     
     root.tree.tag_configure('oddrow', background='orange')
+
+
+if __name__ == '__main__':
+    src = R"C:\Users\dva\unet5\weights\20191128SA1_B05_6NE18B.TIF"
+    my_size = 512
+    img = geotiff.imread(src)
     
+    img = cv2.resize(img, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
+
+    new_height = my_size * math.ceil(img.shape[0]/my_size)
+    new_width = my_size * math.ceil(img.shape[1]/my_size)
+    img_pad = np.zeros((new_height, new_width, img.shape[2]), img.dtype)
+    img_pad[0:img.shape[0], 0:img.shape[1], :] = img
+    split_image(img, src, my_size)
+
+
+
