@@ -50,12 +50,6 @@ def slice_for_train_folder():
         return
     foder = os.path.normpath(foder)
     cls_name = tk_root.tkvar.get()
-    #json_conv.xxx(foder, cls_name, 'a')
-    #answer = messagebox.askquestion("Training dataset", 
-    #    "Slicing completed, proceed ?")
-    #if answer == 'no':
-    #    return
-
     answer = messagebox.askquestion("Satrt New Training ?", 
             'Yes to start new or No to resume')
     init_mode = 'new'
@@ -63,25 +57,6 @@ def slice_for_train_folder():
         init_mode = 'resume'
     start_subprocess(foder,init_mode,cls_name)
         
-#def slice_tif_folder():
-    #foder = askdirectory()
-    #if len(foder) == 0:
-    #    return
-    #foder = os.path.normpath(foder)
-    #multi_tif.process_tif_dir(foder)
-    #answer = messagebox.askquestion("Training dataset",  '%s\nProceed ?'%foder)
-    #if answer == 'no':
-    #    return
-    #
-    #im_path = os.path.join(foder, 'slice', 'image')
-    #ann_path = os.path.join(foder, 'slice', 'annotation')
-    #
-    #answer = messagebox.askquestion("Satrt New Training ?", 'Yes to start new or No to resume')
-    #init_mode = 'new'
-    #if answer == 'no':
-    #    init_mode = 'resume'
-    ##start_subprocess(im_path,ann_path,init_mode,cls_name)
-
 def select_raw_train_folder():
     foder = askdirectory()
     if len(foder) == 0:
@@ -89,6 +64,11 @@ def select_raw_train_folder():
     foder = os.path.normpath(foder)
     init_mode = 'new'
     class_name = tk_root.tkvar.get()
+    answer = messagebox.askquestion("Satrt New Training ?", 
+            'Yes to start new or No to resume')
+    init_mode = 'new'
+    if answer == 'no':
+        init_mode = 'resume'
     start_subprocess(foder,init_mode,class_name)
 
 def start_subprocess(path,init_mode,cls_name):

@@ -30,7 +30,7 @@ def get(cls_name):
             down_scale = 4
             bands = 5
             cls_sub_list = OrderedDict({'Squatter':1,'BuildingTower':2})
-            discard_empty = 0.9   # discard some training images without object, 0.8 for dropping 80% 
+            discard_empty = 0.1   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == 'Solar':
         class cls_cfg:
             my_size = 512

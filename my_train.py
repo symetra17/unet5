@@ -7,9 +7,12 @@ import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 import datetime
+import ray
 
 if __name__=='__main__':
-    
+
+    ray.init(num_cpus=4)
+
     if len(sys.argv) < 4:
         print('Requires input argument, [training folder] [initial mode(new/resume)] [cls_name]')
         quit()
