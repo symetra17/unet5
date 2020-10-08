@@ -48,6 +48,10 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     if isinstance(inp, six.string_types):
         inp = geotiff.imread(inp)
     
+    # remove ASAP
+    inp = inp[:,:,0:4]
+    #
+
     orininal_h = inp.shape[0]
     orininal_w = inp.shape[1]
 
@@ -66,20 +70,6 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
 
     img_overlay = np.zeros_like(seg_img)
 
-    OUTPUT_BW = False
-    if OUTPUT_BW:
-        for n in range(pr.shape[0]):
-            for m in range(pr.shape[1]):
-                if pr[n,m] == 1:
-                    seg_img[n, m, :] = np.array([255,255,255])
-                else:
-                    seg_img[n, m, :] = np.array([0,0,0])
-            #else:
-            #    # color overlay
-            #    cls_id = pr[n,m]
-            #    if cls_id > 0:
-            #        seg_img[n, m, :] = seg_img[n, m, :]//2 + np.array(cfg.predict_color[cls_id])//2
-
     ch0 = img_overlay[:,:,0]
     ch1 = img_overlay[:,:,1]
     ch2 = img_overlay[:,:,2]
@@ -91,7 +81,9 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
         ch1[idx] = color[1]
         ch2[idx] = color[2]
 
-    seg_img = seg_img//2 + img_overlay//2
+    #seg_img = seg_img.astype(np.float32)
+    seg_img = seg_img * 0.66 + img_overlay * 0.33
+    #seg_img = seg_img.astype(np.uint8)
 
     seg_img = cv2.resize(seg_img, (orininal_w, orininal_h), interpolation=cv2.INTER_NEAREST)
 
