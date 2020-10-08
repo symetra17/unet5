@@ -46,15 +46,17 @@ def GetGeoInfo(FileName):
     Projection.ImportFromWkt(SourceDS.GetProjectionRef())
     return Projection
 
-def CreateGeoTiff(outname, Array, GeoT, Projection):
+def CreateGeoTiff(outname, Array, GeoT=None, Projection=None):
     xsize = Array.shape[1]
     ysize =  Array.shape[0]
     DataType = gdal.GDT_Byte
     # Set up the dataset
     driver = gdal.GetDriverByName("GTiff")
     DataSet = driver.Create( outname, xsize, ysize, Array.shape[2], DataType )
-    DataSet.SetGeoTransform(GeoT)
-    DataSet.SetProjection( Projection.ExportToWkt() )
+    if GeoT is not None:
+        DataSet.SetGeoTransform(GeoT)
+    if Projection is not None:
+        DataSet.SetProjection( Projection.ExportToWkt() )
     # Write the array
     for n in range(Array.shape[2]):
         DataSet.GetRasterBand(n+1).WriteArray( Array[:,:,n] )
@@ -76,6 +78,10 @@ def generate_tif_alpha(np4ch, outname, geotiff_ref_in):
         print('Projection:', label)
         gt, pix = read(geotiff_ref_in)
         new_fname = CreateGeoTiff(outname, np4ch, gt, targetProj)
+        gdal_edit.gdal_edit(['','-colorinterp_1', 'red', '-colorinterp_2', 'green', 
+                '-colorinterp_3', 'blue', '-colorinterp_4', 'alpha', outname])
+    else:
+        new_fname = CreateGeoTiff(outname, np4ch)
         gdal_edit.gdal_edit(['','-colorinterp_1', 'red', '-colorinterp_2', 'green', 
                 '-colorinterp_3', 'blue', '-colorinterp_4', 'alpha', outname])
 

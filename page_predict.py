@@ -117,8 +117,6 @@ def single_predict(fname, class_name, fname_dsm=None):
         mul = 1/down_scale
         im = cv2.resize(im, None, fx=mul, fy=mul, interpolation=cv2.INTER_AREA)
         ds_fname = replace_ext(fname, '_dn_samp.tif')
-        #fname1 = os.path.splitext(fname)[0] + '_dn_samp.tif'
-        #fname = str(Path(Path(fname1).parent, 'result', Path(fname1).name))
         fname = ds_fname
         geotiff.imwrite(fname, im)
     
@@ -128,12 +126,6 @@ def single_predict(fname, class_name, fname_dsm=None):
         messagebox.showinfo("Prediction terminated", "Weight file not found")
         return
     
-    #new_height = my_size * math.ceil(img.shape[0]/my_size)
-    #new_width = my_size * math.ceil(img.shape[1]/my_size)
-    #img_pad = np.zeros((new_height, new_width, img.shape[2]), img.dtype)
-    #img_pad[0:img.shape[0], 0:img.shape[1], :] = img
-    #slice_list,start_pos = split_image(img_pad, fname, my_size)
-
     slice_list,start_pos = split_image(fname, my_size)
 
     for f in slice_list:
@@ -148,7 +140,7 @@ def single_predict(fname, class_name, fname_dsm=None):
         img = cv2.resize(img,None,fx=down_scale,fy=down_scale)
         cv2.imwrite(res_file, img)
 
-    if geotiff.is_geotif(src_fname):
+    if True or geotiff.is_geotif(src_fname):
         pid = mp.Process(target=gen_shape_proc, args=(src_fname, img, class_name,))
         pid.start()
     else:
@@ -313,7 +305,7 @@ def predict_thread():
     shutil.rmtree(folder)
     tk_root.btn_start['state'] = 'normal'
     t1=time.time()
-    messagebox.showinfo("Prediction completed", "Prediction completed\nTotal time %.0f\n\n"%(t1-t0))
+    messagebox.showinfo("Prediction completed", "Prediction completed\nTotal time %.0f sec\n\n"%(t1-t0))
 
 
 def start_predict():    
