@@ -113,9 +113,10 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     sub_im_2 = sub_im[:,:,2].copy()
     sub_im_2[sub_im_2<0] = 128.0
     sub_im[:,:,2] = sub_im_2
-    sub_im_3 = sub_im[:,:,3].copy()
-    sub_im_3[sub_im_3<0] = 128.0
-    sub_im[:,:,3] = sub_im_3
+    if sub_im.shape[2] > 3:
+        sub_im_3 = sub_im[:,:,3].copy()
+        sub_im_3[sub_im_3<0] = 128.0
+        sub_im[:,:,3] = sub_im_3
     if sub_im.shape[2] > 4:
         sub_im_4 = sub_im[:,:,4].copy()
         sub_im_4[sub_im_4<0] = 0
