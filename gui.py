@@ -41,16 +41,15 @@ if __name__=='__main__':
     page1 = ttk.Frame(nb)
     page2 = ttk.Frame(nb)
     page3 = ttk.Frame(nb)
-    if not cfg.show_training_page:
-        nb.add(page1, text='\n  PREDICT  \n')
+
+    nb.add(page1, text='\n  PREDICT  \n')
     if cfg.show_training_page:
         nb.add(page2, text='\n  TRAINING  \n')
         nb.add(page3, text='\n  DATA UTILS \n')
     
     nb.grid(column=0)
 
-    if not cfg.show_training_page:
-        page_predict.build_page(page1)
+    page_predict.build_page(page1)
     if cfg.show_training_page:
         import page_train
         page_train.build_page(page2)
