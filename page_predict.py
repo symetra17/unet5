@@ -69,14 +69,16 @@ def split_image(outname, my_size):
             start_pos.append((xstart,ystart))
             cv2.rectangle(slice_visual,(xstart,ystart),(xend-1,yend-1),(255,255,255),1)
             sub_im = img[ystart:yend, xstart:xend, :]
-            fullpath = remove_ext(outname) + '_X_%d_%d_Y_%d_%d.tif'%(xstart,xend,ystart,yend)
-            fullpath = path_insert_folde(fullpath, 'tmp')
+            tail = os.path.split(outname)[1]
+            fullpath = os.path.splitext(tail)[0] + '_X_%d_%d_Y_%d_%d.tif'%(xstart,xend,ystart,yend)
+            fullpath = os.path.join('tmp', fullpath)
+
             out_fname_list.append(fullpath)
             geotiff.imwrite(fullpath, sub_im)
     #cv2.imwrite('slice_visual.bmp',slice_visual)
     return out_fname_list, start_pos
 
-def gen_shape_proc(src_fname, img, class_name):
+def gen_shape_proc(src_fname, img, class_name, output_folder):
         shape1 = geotiff.get_img_h_w(src_fname)
         src_h = shape1[0]
         src_w = shape1[1]
@@ -86,17 +88,18 @@ def gen_shape_proc(src_fname, img, class_name):
         np4ch[:,:,3] = cp   # fill alpha channel with detection result
         np4ch[:,:,0] = cp   # fill 1st channel with detection result
         out_path = Path(replace_ext(src_fname, '_result_geo.tif'))
-        out_path = Path(out_path.parent,'result',out_path.name)
+        out_path = Path(output_folder, out_path.name)
         geotiff.generate_tif_alpha(np4ch, str(out_path), src_fname)
 
         result_mask_path = out_path
         out_shp_file = Path(os.path.splitext(src_fname)[0] + '_shape')
-        out_shp_file = Path(out_shp_file.parent, 'result', Path(out_shp_file.name))
+        out_shp_file = Path(output_folder, Path(out_shp_file.name))
+
         geotiff.polygonize(rasterTemp=str(result_mask_path), outShp=str(out_shp_file))
         shp_filter.add_area_single(str(out_shp_file/'predicted_object.shp'), 
                 10, out_shp_file/'filtered'/'predicted_object.shp', class_name)
 
-def single_predict(fname, class_name, fname_dsm=None):
+def single_predict(fname, class_name, output_folder, fname_dsm=None):
     src_fname = fname
     down_scale = cfg.get(class_name).down_scale
     my_size = cfg.get(class_name).my_size
@@ -106,7 +109,7 @@ def single_predict(fname, class_name, fname_dsm=None):
     if down_scale > 1:
         im = geotiff.imread(fname)
         assert len(im.shape) > 2        # color
-        assert im.shape[2] == 4         # 4 channels
+        #assert im.shape[2] == 4         # 4 channels
         if fname_dsm is not None:
             dsm = geotiff.imread(fname_dsm)
             assert len(dsm.shape) == 2
@@ -132,8 +135,8 @@ def single_predict(fname, class_name, fname_dsm=None):
         model_init.init(n_sub_cls, bands, my_size, str(chk_point_path))
         model_init.do_prediction(f)
     cv2.destroyWindow('Predict')
-    recombine(fname, start_pos)
-    res_file = recombine2(fname, start_pos)
+    recombine(fname, start_pos, output_folder)
+    res_file = recombine2(fname, start_pos, output_folder)
 
     img = cv2.imread(res_file)
     if down_scale > 1:
@@ -141,39 +144,23 @@ def single_predict(fname, class_name, fname_dsm=None):
         cv2.imwrite(res_file, img)
 
     if True or geotiff.is_geotif(src_fname):
-        pid = mp.Process(target=gen_shape_proc, args=(src_fname, img, class_name,))
+        pid = mp.Process(target=gen_shape_proc, args=(src_fname, img, class_name, output_folder,))
         pid.start()
     else:
         print('is not a geotiff')
 
 
 def openimage():
-    fname = askopenfilename(filetypes=(
-        ('Image file', '*.jpg *.JPG *.jpeg *.JPEG *.tif *.bmp *.png'),
-        ))
-    if len(fname) == 0:
-        return
-    class_name = tk_root.tkvar.get()
-    single_predict(fname, class_name)
-    messagebox.showinfo("Prediction completed", "Prediction completed")
+    pass
+    #fname = askopenfilename(filetypes=(
+    #    ('Image file', '*.jpg *.JPG *.jpeg *.JPEG *.tif *.bmp *.png'),
+    #    ))
+    #if len(fname) == 0:
+    #    return
+    #class_name = tk_root.tkvar.get()
+    #single_predict(fname, class_name)
+    #messagebox.showinfo("Prediction completed", "Prediction completed")
 
-
-def openfolder_predict():
-    fd = askdirectory()
-    if len(fd) == 0:
-        return
-    files = []
-    if os.name=='nt':
-        ext_list = ['jpg', 'tif', 'png']
-    else:
-        ext_list = ['jpg', 'JPG', 'tif', 'TIF', 'png', 'PNG']
-    for item in ext_list:
-        files.extend(glob(os.path.join(fd,'*.'+item)))
-    print(files)
-    class_name = tk_root.tkvar.get()
-    for fname in files:
-        single_predict(fname, class_name)
-    messagebox.showinfo("Prediction completed", "Prediction completed")
 
 def write_table():
     if len(dom_files) != len(dsm_files):
@@ -204,7 +191,8 @@ def write_table():
             tk_root.tree.insert("",END,text=('(DSM) ') + fname_body, tags=('oddrow',),
                         value=(cols, rows, bands, geoinformation))
         except:
-            print('number of file unmatch')
+            if dsm_folder is not None:
+                print('number of file unmatch')
             #messagebox.showinfo("Input error", "Number of file unmatch")
 
 
@@ -231,7 +219,7 @@ def select_dom_folder():
         if '_dn_samp' not in fname:
             dom_files.append(fname)
     write_table()
-
+    tk_root.btn_start['state'] = 'normal'
 
 def select_dsm_folder():
     global dsm_folder
@@ -249,28 +237,26 @@ def select_dsm_folder():
     dsm_files.sort()
     write_table()
 
-
-
+def select_output_folder():
+    fd = askdirectory()
+    if len(fd) == 0:
+        return
+    tk_root.output_folder = fd
+    tk_root.entry_output.delete(0,END)
+    tk_root.entry_output.insert(10,fd)
 
 def predict_thread():
     t0=time.time()
-    try:
-        os.mkdir(os.path.join(dom_folder,'result'))
-    except:
-        pass
+    if not os.path.exists(tk_root.output_folder):
+        try:
+            os.mkdir(tk_root.output_folder)
+        except:
+            messagebox.showinfo("Prediction failed", "Output folder could not be created")
+            return
 
-    new_folder = folder = os.path.join(dom_folder,'tmp')  #os.path.join(os.path.split(outname)[0], 'tmp')
-    try:
-        shutil.rmtree(new_folder)
-    except:
-        pass
-    try:
+    new_folder = 'tmp'
+    if not os.path.exists(new_folder):
         os.mkdir(new_folder)
-    except:
-        print('could not create tmp folder')
-        quit()
-        pass
-
 
     class_name = tk_root.tkvar.get()
     pid_ls = []
@@ -278,7 +264,7 @@ def predict_thread():
         assert len(dom_files) == len(dsm_files)
         for n, dom_file in enumerate(dom_files):
             dsm_file = dsm_files[n]
-            single_predict(dom_file, class_name, dsm_file)
+            single_predict(dom_file, class_name, tk_root.output_folder, dsm_file)
 
             #pid = mp.Process(target=single_predict, args=(dom_file, class_name, dsm_file,))
             #pid.start()
@@ -291,7 +277,7 @@ def predict_thread():
         for dom_file in dom_files:
             #single_predict(dom_file, class_name)
 
-            pid = mp.Process(target=single_predict, args=(dom_file, class_name,))
+            pid = mp.Process(target=single_predict, args=(dom_file, class_name, tk_root.output_folder, ))
             pid.start()
             pid_ls.append(pid)
             if len(pid_ls) > 1:
@@ -300,8 +286,7 @@ def predict_thread():
             pid.join()
 
             
-
-    folder = os.path.join(dom_folder,'tmp')
+    folder = 'tmp'
     shutil.rmtree(folder)
     tk_root.btn_start['state'] = 'normal'
     t1=time.time()
@@ -394,13 +379,32 @@ def build_page(root):
                 width=btn_size)
     root.entry2['state'] = 'disable'
 
+
+    root.entry_output = Entry(root.left_frame1, width=60)
+    cwd = os.path.join(os.getcwd(), 'result')
+    #cwd = R'C:\Users\dva\Desktop\unet_result'
+    tk_root.output_folder = cwd
+    root.entry_output.insert(0, cwd)
+    root.entry_output.pack(pady=(20,0))
+
+    
+
+    root.btn_sel_output = Button(root.left_frame1, text="Select output folder", 
+            command=select_output_folder, 
+            font=('Helvetica', '20'))
+    root.photo50 = PhotoImage(file=os.path.join('icon', "open.png"))
+    root.btn_sel_output.config(image=root.photo50,compound="left", 
+                height="60", width=btn_size)
+    root.btn_sel_output.pack(pady=(10,30))
+
+
     tk_root.btn_start = Button(root.left_frame1, text="   Start  ", command=start_predict, 
-            height=1, width=btn_size, 
-            font=('Helvetica', '20'))    
+            height=1, width=btn_size, font=('Helvetica', '20'))
     tk_root.btn_start.pack(pady=(10,30))
     tk_root.photo064 = PhotoImage(file=os.path.join('icon', "start.png"))
     tk_root.btn_start.config(image=tk_root.photo064,compound="left", 
                 height="60", width=btn_size)
+    tk_root.btn_start['state'] = 'disable'
 
     root.tree = ttk.Treeview(root, height=28)
     root.tree.pack(side=RIGHT, padx=(20,20))

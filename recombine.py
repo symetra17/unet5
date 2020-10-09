@@ -13,10 +13,12 @@ def path_insert_foldr(filename, folder):
     splited = os.path.split(filename)
     return os.path.join(splited[0], folder, splited[1])
 
-def recombine(src_img_file, start_pos):
+def recombine(src_img_file, start_pos, output_folder):
     
     '''This function collects fragment image and forms a larger images'''
-    files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result.tif', 'tmp'))
+    #files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result.tif', 'tmp'))
+    files = glob(os.path.join('tmp', '*_result.tif'))
+
     www = files[0].split('_')
     file_head = '_'.join(www[0:-7])
 
@@ -46,15 +48,16 @@ def recombine(src_img_file, start_pos):
     crop_size = geotiff.get_img_h_w(src_img_file)
     # Crop result images to remove zeros padding on the right and bottom size of the image.
     outname = remove_ext(src_img_file) + '_result.tif'
-    outname = os.path.join(os.path.split(outname)[0],'result',os.path.split(outname)[1])
+    outname = os.path.join(output_folder, os.path.split(outname)[1])
     geotiff.imwrite(outname, img[0:crop_size[0], 0:crop_size[1], :])
     return
 
-def recombine2(src_img_file, start_pos):
+def recombine2(src_img_file, start_pos, output_folder):
     src_img_file = os.path.normpath(src_img_file)
     
     '''This function collects fragment image and forms a larger images'''
-    files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result2.bmp', 'tmp'))
+    #files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result2.bmp', 'tmp'))
+    files = glob(os.path.join('tmp', '*_result2.bmp'))
     www = files[0].split('_')
     file_head = '_'.join(www[0:-7])
     shape_src = geotiff.get_img_h_w(src_img_file)
@@ -85,10 +88,11 @@ def recombine2(src_img_file, start_pos):
     h = img[0:crop_size[0], 0:crop_size[1], 0].copy()
     h[h>0] = 255
     ofname = remove_ext(src_img_file) + '_result_bw.bmp'
-    a_part = os.path.split(ofname)[0]
-    b_part = 'result'
+    #a_part = os.path.split(ofname)[0]
+    #b_part = 'result'
     c_part = os.path.split(ofname)[1]
-    ofname = os.path.join(a_part,b_part,c_part)
+    #ofname = os.path.join(a_part,b_part,c_part)
+    ofname = os.path.join(output_folder, c_part)
     cv2.imwrite(ofname, h)
     return ofname
 
