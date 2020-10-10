@@ -16,8 +16,11 @@ def path_insert_foldr(filename, folder):
 def recombine(src_img_file, start_pos, output_folder):
     
     '''This function collects fragment image and forms a larger images'''
-    #files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result.tif', 'tmp'))
-    files = glob(os.path.join('tmp', '*_result.tif'))
+
+    tail = os.path.split(src_img_file)[1]
+    tail = os.path.splitext(tail)[0]
+
+    files = glob(os.path.join('tmp', tail + '*_result.tif'))
 
     www = files[0].split('_')
     file_head = '_'.join(www[0:-7])

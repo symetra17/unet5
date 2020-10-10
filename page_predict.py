@@ -280,7 +280,7 @@ def predict_thread():
             pid = mp.Process(target=single_predict, args=(dom_file, class_name, tk_root.output_folder, ))
             pid.start()
             pid_ls.append(pid)
-            if len(pid_ls) > 1:
+            if len(pid_ls) > 0:            #if len(pid_ls) > 1:
                 pid_ls.pop(0).join()
         for pid in pid_ls:
             pid.join()

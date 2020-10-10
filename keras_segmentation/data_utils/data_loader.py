@@ -90,7 +90,8 @@ def get_image_array(image_input, width, height, imgNorm="sub_mean",
         img[:, :, 0] -= 103.939
         img[:, :, 1] -= 116.779
         img[:, :, 2] -= 123.68
-        img[:, :, 3] -= 125.0
+        if img.shape[2] > 3:
+            img[:, :, 3] -= 125.0
         img = img[:, :, ::-1]
     elif imgNorm == "divide":
         img = cv2.resize(img, (width, height))
