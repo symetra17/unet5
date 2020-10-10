@@ -274,16 +274,18 @@ def predict_thread():
         for pid in pid_ls:
             pid.join()
     else:
-        for dom_file in dom_files:
-            #single_predict(dom_file, class_name)
-
-            pid = mp.Process(target=single_predict, args=(dom_file, class_name, tk_root.output_folder, ))
-            pid.start()
-            pid_ls.append(pid)
-            if len(pid_ls) > 0:            #if len(pid_ls) > 1:
-                pid_ls.pop(0).join()
-        for pid in pid_ls:
-            pid.join()
+        if cfg.NUM_OF_PRED_PROC > 1:
+            for dom_file in dom_files:
+                pid = mp.Process(target=single_predict, args=(dom_file, class_name, tk_root.output_folder, ))
+                pid.start()
+                pid_ls.append(pid)
+                if len(pid_ls) > cfg.NUM_OF_PRED_PROC:
+                    pid_ls.pop(0).join()
+                for pid in pid_ls:
+                    pid.join()
+        else:
+            for dom_file in dom_files:
+                single_predict(dom_file, class_name, tk_root.output_folder)
 
             
     folder = 'tmp'
