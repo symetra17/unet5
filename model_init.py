@@ -1,18 +1,18 @@
 import guicfg as cfg
 import os
-from keras import backend as K 
+import time
+import multiprocessing as mp
 
-#from keras_segmentation.train import find_latest_checkpoint
-#from keras.backend.tensorflow_backend import set_session
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-#config = tf.ConfigProto()
-#config = tf.compat.v1.ConfigProto() 
-#config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU
-#config.log_device_placement = False  # to log device placement (on which device the operation ran)
-##sess = tf.Session(config=config)
-#sess = tf.compat.v1.Session()
-#set_session(sess)  # set this TensorFlow session as the default 
+process_name = mp.current_process().name
+if process_name != 'gen_shape':
+    from keras import backend as K 
+    from keras.backend.tensorflow_backend import set_session
+    import tensorflow as tf
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
+    K.set_session(sess)
 
 model = None
 initalized = False
@@ -23,14 +23,14 @@ def remove_ext(inp):
 
 def init(n_classes, bands, my_size, checkpoint_path=None):
     global initalized, model, last_chkpt_path
-    from keras_segmentation.models.unet import unet
+    from keras_segmentation.models.unet import unet, resnet50_unet
     if (not initalized) or (checkpoint_path != last_chkpt_path):
         try:
             del model
         except:
             pass
         K.clear_session()
-        model = unet(bands,
+        model = resnet50_unet(bands,
             n_classes = n_classes,
             input_height = my_size, 
             input_width  = my_size)

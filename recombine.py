@@ -45,6 +45,15 @@ def recombine(src_img_file, start_pos, output_folder):
         yend   = ystart + my_size
         inp_name = file_head + '_X_%d_%d_Y_%d_%d_result.tif'%(xstart, xend, ystart, yend)
         sub_img = geotiff.imread(inp_name)
+        img[ystart:yend, xstart:xend, :] = sub_img
+
+    for pos in start_pos:
+        xstart = pos[0]
+        ystart = pos[1]
+        xend   = xstart + my_size
+        yend   = ystart + my_size
+        inp_name = file_head + '_X_%d_%d_Y_%d_%d_result.tif'%(xstart, xend, ystart, yend)
+        sub_img = geotiff.imread(inp_name)
         img[ystart+ntrim:yend-ntrim, xstart+ntrim:xend-ntrim, :] = sub_img[ntrim:sub_img.shape[0]-ntrim,ntrim:sub_img.shape[1]-ntrim,:]
 
     # Determine final output image size, which should be equal to that of the source image
@@ -60,7 +69,11 @@ def recombine2(src_img_file, start_pos, output_folder):
     
     '''This function collects fragment image and forms a larger images'''
     #files = glob(path_insert_foldr(remove_ext(src_img_file)  + '*_result2.bmp', 'tmp'))
-    files = glob(os.path.join('tmp', '*_result2.bmp'))
+    #files = glob(os.path.join('tmp', '*_result2.bmp'))
+    tail = os.path.split(src_img_file)[1]
+    tail = os.path.splitext(tail)[0]
+    files = glob(os.path.join('tmp', tail + '*_result2.bmp'))
+
     www = files[0].split('_')
     file_head = '_'.join(www[0:-7])
     shape_src = geotiff.get_img_h_w(src_img_file)

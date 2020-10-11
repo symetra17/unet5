@@ -79,10 +79,10 @@ def create_prj(shp_path, prj_path):
     dataset = driver.Open(shp_path)
     layer = dataset.GetLayer()
     spatialRef = layer.GetSpatialRef()
-    
-    file = open(prj_path, 'w')
-    file.write(spatialRef.ExportToWkt())
-    file.close()
+    if spatialRef is not None:
+        file = open(prj_path, 'w')
+        file.write(spatialRef.ExportToWkt())
+        file.close()
     
 
 
