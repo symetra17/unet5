@@ -96,14 +96,22 @@ def is_geotif(fname):
 def imread(fname):  # read like opencv
     from osgeo import gdal_array
     npa = gdal_array.LoadFile(fname)
-    if len(npa.shape) > 2:              # if color image, put it to channel-last format
-        npa = np.moveaxis(npa, 0, 2)
+
+    if len(npa.shape) == 2:
+        npa3ch = np.zeros((3, npa.shape[0],npa.shape[1]), dtype=npa.dtype)
+        npa3ch[0,:,:] = npa.copy()
+        npa3ch[1,:,:] = npa.copy()
+        npa3ch[2,:,:] = npa.copy()
+        npa = npa3ch
+    
+    npa = np.moveaxis(npa, 0, 2)   # if color image, put it to channel-last format
     npa = npa.astype(np.float32)
     npa = np.nan_to_num(npa)
     return npa
 
 def imwrite(fname,npa):
-    npa = np.moveaxis(npa, 2, 0)  # channel last to channel first
+    if len(npa.shape) > 2:
+        npa = np.moveaxis(npa, 2, 0)  # channel last to channel first
     gdal_array.SaveArray(npa, fname, format="GTiff")
 
 def polygonize(rasterTemp, outShp):
