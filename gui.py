@@ -1,5 +1,8 @@
 # This is a python3 code
 # It’s amazing how the the human mind does not process the the fact I used the the word “the” twice each time in this sentence
+import warnings
+warnings.filterwarnings("ignore")
+
 import os
 import shutil
 from tkinter import Tk, PhotoImage
@@ -10,7 +13,6 @@ from tkinter import ttk
 
 import page_predict
 import guicfg as cfg
-
 
 #import getmac
 #if getmac.get_mac_address() != "00:1b:21:bb:2c:72":
