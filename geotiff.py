@@ -74,6 +74,8 @@ def generate_tif_alpha(np4ch, outname, geotiff_ref_in):
     # we copy the geo info from geotiff_ref, and put them in the new geotiff
     targetProj = GetGeoInfo(geotiff_ref_in)
     label = 'Hong Kong 1980'
+    ds = gdal.Open(geotiff_ref_in, gdal.GA_ReadOnly)
+    gt = ds.GetGeoTransform()
     if label in str(targetProj):
         print('Projection:', label)
         gt, pix = read(geotiff_ref_in)
@@ -81,7 +83,31 @@ def generate_tif_alpha(np4ch, outname, geotiff_ref_in):
         gdal_edit.gdal_edit(['','-colorinterp_1', 'red', '-colorinterp_2', 'green', 
                 '-colorinterp_3', 'blue', '-colorinterp_4', 'alpha', outname])
     else:
-        new_fname = CreateGeoTiff(outname, np4ch)
+        str1 = '''PROJCS["Hong Kong 1980 Grid System",
+        GEOGCS["Hong Kong 1980",
+        DATUM["Hong_Kong_1980",
+            SPHEROID["International 1924",6378388,297,
+                AUTHORITY["EPSG","7022"]],
+            AUTHORITY["EPSG","6611"]],
+        PRIMEM["Greenwich",0,
+            AUTHORITY["EPSG","8901"]],
+        UNIT["degree",0.0174532925199433,
+            AUTHORITY["EPSG","9122"]],
+        AUTHORITY["EPSG","4611"]],        
+        PROJECTION["Transverse_Mercator"],
+        PARAMETER["latitude_of_origin",22.3121333333333],
+        PARAMETER["central_meridian",114.178555555556],
+        PARAMETER["scale_factor",1],
+        PARAMETER["false_easting",836694.05],
+        PARAMETER["false_northing",819069.8],
+        UNIT["metre",1,
+            AUTHORITY["EPSG","9001"]],
+        AXIS["Northing",NORTH],
+        AXIS["Easting",EAST],
+        AUTHORITY["EPSG","2326"]]'''
+        projection = osr.SpatialReference()
+        projection.ImportFromWkt(str1)
+        new_fname = CreateGeoTiff(outname, np4ch, gt, projection)
         gdal_edit.gdal_edit(['','-colorinterp_1', 'red', '-colorinterp_2', 'green', 
                 '-colorinterp_3', 'blue', '-colorinterp_4', 'alpha', outname])
 
@@ -184,7 +210,13 @@ def get_img_h_w(fname):
     return img.shape
 
 if __name__=='__main__':
-    geotiff_ref_in = R"C:\Users\dva\Pictures\20191128SA1_B05_6NE19C.TIF"
+    FileName = R"C:\Users\dva\Pictures\Ortho63\63ST7SW9c2013302.tif"
+
+    
+    np4ch = np.zeros((6000,7500,4),np.uint8)
+    generate_tif_alpha(np4ch, 'out.tif', FileName)
+
+    quit()
 
     fname = R"C:\Users\echo\Pictures\lands_inference_example\example2\DOM\20180103SA1_B05_6NW7A.TIF"
     #fname = R"C:\Users\echo\Pictures\squatter result demo\downsampled_result.jpg"
