@@ -49,7 +49,7 @@ def read_img_anno(inplist, im_file_name, cls_name):
 
 @ray.remote
 def skimage_rotate(im_file_name, img, n, angle):
-    img1 = skimage.transform.rotate(img, angle, resize=True, 
+    img1 = skimage.transform.rotate(img.copy(), angle, resize=True, 
                         mode='constant', cval=-1.0, preserve_range=True)
     img1 = img1.astype(np.half)
     np.save(os.path.splitext(im_file_name)[0] + '_im_rot_%d'%n, img1)     # save it for use next time
@@ -90,7 +90,8 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     assert sub_anno.shape[1] == my_size
 
     if down_scale != 1:
-        sub_im = cv2.resize(sub_im, None, fx=1/down_scale, fy=1/down_scale)
+        sub_im = cv2.resize(sub_im, None, fx=1/down_scale, fy=1/down_scale,
+                interpolation=cv2.INTER_AREA)
         sub_anno = cv2.resize(sub_anno, None, fx=1/down_scale, fy=1/down_scale,
                 interpolation=0)
     # Some images contain large blank black or white area, and these 
@@ -107,12 +108,23 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     sub_im_0 = sub_im[:,:,0].copy()
     sub_im_0[sub_im_0<0] = 128.0
     sub_im[:,:,0] = sub_im_0
-    sub_im_1 = sub_im[:,:,1].copy()
-    sub_im_1[sub_im_1<0] = 128.0
-    sub_im[:,:,1] = sub_im_1
-    sub_im_2 = sub_im[:,:,2].copy()
-    sub_im_2[sub_im_2<0] = 128.0
-    sub_im[:,:,2] = sub_im_2
+
+
+
+    if sub_im.shape[2] > 1:
+        sub_im_1 = sub_im[:,:,1].copy()
+        sub_im_1[sub_im_1<0] = 128.0
+        sub_im[:,:,1] = sub_im_1
+
+
+
+    if sub_im.shape[2] > 2:
+        sub_im_2 = sub_im[:,:,2].copy()
+        sub_im_2[sub_im_2<0] = 128.0
+        sub_im[:,:,2] = sub_im_2
+
+
+
     if sub_im.shape[2] > 3:
         sub_im_3 = sub_im[:,:,3].copy()
         sub_im_3[sub_im_3<0] = 128.0
@@ -144,8 +156,8 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
 
     my_size = cls_cfg.my_size * down_scale
     random.seed()
-    augmen_x = random.randint(0, my_size//2)
-    augmen_y = random.randint(0, my_size//2)
+    augmen_x = int(cfg.augm_translate) * random.randint(0, my_size//2)
+    augmen_y = int(cfg.augm_translate) * random.randint(0, my_size//2)
         
     if not cfg.augm_rotation:
         img, anno_im, _ = read_img_anno(inplist, im_file_name, cls_name)
@@ -233,88 +245,6 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
     ray.get(pid_ls)
     t1 = time.time()
     print("cropping %.1f"%(t1-t0))
-
-
-            #sub_im = img[ystart:yend, xstart:xend, :]
-            #sub_anno = anno_im[ystart:yend, xstart:xend]
-
-            ## Pad image to 1024 divisible
-            #sub_img_h, sub_img_w = sub_im.shape[0:2]
-            #if sub_img_h < my_size:
-            #    pady = my_size - sub_img_h
-            #else:
-            #    pady=0
-            #if sub_img_w < my_size:
-            #    padx = my_size - sub_img_w
-            #else:
-            #    padx=0
-            #
-            #sub_im = np.pad(sub_im, ((0,pady), (0,padx), (0,0) ) , 
-            #                mode='constant',constant_values=-1.0)
-            #sub_anno = np.pad(sub_anno, ((0,pady), (0,padx)))
-            #
-            #assert sub_im.shape[0] == my_size
-            #assert sub_im.shape[1] == my_size
-            #assert sub_anno.shape[0] == my_size
-            #assert sub_anno.shape[1] == my_size
-            #
-            #if down_scale != 1:
-            #    sub_im = cv2.resize(sub_im, None, fx=1/down_scale, fy=1/down_scale)
-            #    sub_anno = cv2.resize(sub_anno, None, fx=1/down_scale, fy=1/down_scale,
-            #            interpolation=0)
-            #
-            ## Some images contain large blank black or white area, and these 
-            ## area should not be included in training.
-            #if int(np.percentile(sub_im, 40)) < 0:      # too many rotation out of boundary area
-            #    continue
-            #
-            #if int(np.percentile(sub_im, 60)) >= 255:   # too many white empty area
-            #    continue
-            #
-            #if int(np.percentile(sub_anno, 99)) == 0:
-            #    
-            #    v = random.random()
-            #    if v < cls_cfg.discard_empty:  # keep some of background picture
-            #        continue                   # discard this picture
-            #
-            #sub_im_0 = sub_im[:,:,0].copy()
-            #sub_im_0[sub_im_0<0] = 128.0
-            #sub_im[:,:,0] = sub_im_0
-            #
-            #sub_im_1 = sub_im[:,:,1].copy()
-            #sub_im_1[sub_im_1<0] = 128.0
-            #sub_im[:,:,1] = sub_im_1
-            #
-            #sub_im_2 = sub_im[:,:,2].copy()
-            #sub_im_2[sub_im_2<0] = 128.0
-            #sub_im[:,:,2] = sub_im_2
-            #
-            #sub_im_3 = sub_im[:,:,3].copy()
-            #sub_im_3[sub_im_3<0] = 128.0
-            #sub_im[:,:,3] = sub_im_3
-            #
-            #if sub_im.shape[2] > 4:
-            #    sub_im_4 = sub_im[:,:,4].copy()
-            #    sub_im_4[sub_im_4<0] = 0
-            #    sub_im[:,:,4] = sub_im_4
-            #            
-            #outpath = path_insert_folde(outname, 'slice'+a_or_b)
-            #outpath = path_insert_folde(outpath, 'annotation')
-            #cv2.imwrite(outpath + '.png', sub_anno.astype(np.float32))
-            #
-            #outpath = path_insert_folde(outname + '.tif', 'slice'+a_or_b)
-            #outpath = path_insert_folde(outpath, 'image')
-            #geotiff.imwrite(outpath, sub_im.astype(np.float32))
-            
-            #sub_sub_im = sub_im[:,:,0:3]
-            #from pathlib import Path
-            #try:
-            #    os.mkdir(Path(Path(outpath).parent.parent, 'vieweable'))
-            #except:
-            #    pass
-            #opath2 = Path(Path(outpath).parent.parent, 'vieweable', Path(outpath).name)
-            #
-            #cv2.imwrite(str(opath2), sub_sub_im.astype(np.uint8))
 
     
 def mp_split(files, cls_name, a_or_b):

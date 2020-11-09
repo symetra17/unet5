@@ -1,13 +1,14 @@
 from collections import OrderedDict 
 classes_dict = OrderedDict({'Squatter':1})
-epochs = 200
+epochs = 300
 predict_output_format = 'jpg'   # option include jpg bmp
 show_training_page = True
 
 augm_rotation = True
 augm_angle_range = [-30, 30]
+augm_translate = True
 
-cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar', 'Algae']
+cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar', 'Algae', 'DSM', 'House63']
 
 NUM_OF_PRED_PROC = 1
 
@@ -32,7 +33,7 @@ def get(cls_name):
             down_scale = 4
             bands = 5
             cls_sub_list = OrderedDict({'Squatter':1,'BuildingTower':2})
-            discard_empty = 0.1   # discard some training images without object, 0.8 for dropping 80% 
+            discard_empty = 0.01   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == 'Solar':
         class cls_cfg:
             my_size = 512
@@ -54,4 +55,18 @@ def get(cls_name):
             bands = 3
             cls_sub_list = OrderedDict({'long':1, 'medium':2, 'short':3})
             discard_empty = 0.01   # discard some training images without object, 0.8 for dropping 80% 
+    elif cls_name == 'DSM':
+        class cls_cfg:
+            my_size = 480
+            down_scale = 4
+            bands = 3
+            cls_sub_list = OrderedDict({'Squatter':1})
+            discard_empty = 0.99   # discard some training images without object, 0.8 for dropping 80% 
+    elif cls_name == 'House63':
+        class cls_cfg:
+            my_size = 512
+            down_scale = 2
+            bands = 3
+            cls_sub_list = OrderedDict({'house':1,'garden':2})
+            discard_empty = 0.001   # discard some training images without object, 0.8 for dropping 80% 
     return cls_cfg
