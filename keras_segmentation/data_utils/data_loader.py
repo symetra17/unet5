@@ -87,9 +87,10 @@ def get_image_array(image_input, width, height, imgNorm="sub_mean",
     elif imgNorm == "sub_mean":
         #img = cv2.resize(img, (width, height))
         img = img.astype(np.float32)
-        img[:, :, 0] -= 103.939
-        img[:, :, 1] -= 116.779
-        img[:, :, 2] -= 123.68
+        img[:, :, 0] -= 110.0
+        img[:, :, 1] -= 110.0
+        img[:, :, 2] -= 110.0
+
         if img.shape[2] > 3:
             img[:, :, 3] -= 125.0
         img = img[:, :, ::-1]

@@ -160,5 +160,5 @@ def build_page(root):
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
     root.popupMenu = OptionMenu(root, root.tkvar, *choices)
-    root.popupMenu.config(width=8,font=('Helvetica',16))
+    root.popupMenu.config(width=12,font=('Helvetica',16))
     root.popupMenu.pack(pady=(10,40))
