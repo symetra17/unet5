@@ -44,6 +44,8 @@ def replace_ext(inp, new_ext):
 def split_image(outname, my_size):
 
     img = geotiff.imread(outname)
+    if len(img.shape) < 3:
+        img = np.expand_dims(img,axis=2)
 
     out_fname_list = []
     img_h, img_w = img.shape[:2]
@@ -89,6 +91,10 @@ def single_predict(fname, class_name, output_folder, fname_dsm=None):
 
     if down_scale > 1:
         im = geotiff.imread(fname)
+
+        if len(im.shape) < 3:
+            im = np.expand_dims(im,axis=2)
+
         assert len(im.shape) > 2        # color
         #assert im.shape[2] == 4         # 4 channels
         if fname_dsm is not None:
@@ -100,6 +106,8 @@ def single_predict(fname, class_name, output_folder, fname_dsm=None):
 
         mul = 1/down_scale
         im = cv2.resize(im, None, fx=mul, fy=mul, interpolation=cv2.INTER_AREA)
+        if len(im.shape) < 3:
+            im = np.expand_dims(im,axis=2)
         ds_fname = replace_ext(fname, '_dn_samp.tif')
         fname = ds_fname
         geotiff.imwrite(fname, im)

@@ -1,4 +1,4 @@
-from keras_segmentation.models.unet import vgg_unet, unet
+from keras_segmentation.models.unet import vgg_unet, unet, resnet50_unet
 import guicfg as cfg
 import sys
 import os
@@ -57,7 +57,7 @@ if __name__=='__main__':
     fid.write(src_dir + '\n')
     fid.close()
 
-    model = unet(bands,
+    model = resnet50_unet(bands,
             n_classes=n_classes,
             input_height=my_size, 
             input_width =my_size)
