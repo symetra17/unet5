@@ -43,12 +43,13 @@ if __name__=='__main__':
     page1 = ttk.Frame(nb)
     page2 = ttk.Frame(nb)
     page3 = ttk.Frame(nb)
+    page4 = ttk.Frame(nb)
 
     nb.add(page1, text='\n  PREDICT  \n')
     if cfg.show_training_page:
         nb.add(page2, text='\n  TRAINING  \n')
         nb.add(page3, text='\n  DATA UTILS \n')
-    
+        nb.add(page4, text='\n  ACCURACY UTILS \n')
     nb.grid(column=0)
 
     page_predict.build_page(page1)
@@ -57,6 +58,8 @@ if __name__=='__main__':
         page_train.build_page(page2)
         import page_utils
         page_utils.build_page(page3)
+        import page_accuracy
+        page_accuracy.build_page(page4)
 
     file_path = os.path.dirname(os.path.abspath(__file__))
     tmp = os.path.join(file_path,'tmp')
