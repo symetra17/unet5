@@ -157,7 +157,7 @@ def batch_cal(json_folder, detect_folder,output_path):
                     # cf_matrix.to_string()
                     
                     write_log(os.path.join(output_path,"Model_accuracy_log.txt"), info_txt)
-                    cv2.imwrite('ground_true.png',tagged_img)
+                    cv2.imwrite(os.path.join(output_path,filename+'_ground_true.png'),tagged_img)
                     overall_precision += precision_rate
                     overall_recall += precision_rate
                     overall_accuracy += accuracy_rate

@@ -13,66 +13,66 @@ import cv2
 import guicfg as cfg
 import numpy as np
 import math
-import dataset_utils
-import delete_blank
+import BatchModelAccuracy as bmal
 
 global tk_root 
 
-def foo():
-    fd = askdirectory(title=R'Choose "Slice" directory')
-    if len(fd) == 0:
-        return
-    str1 = 'Non-blank/blank ratio: %.2f'%dataset_utils.get_statistics(fd)
-    messagebox.showinfo("Dataset stats", str1)
+def clicked():
+    answer = filedialog.askdirectory(parent=tk_root,
+                                 initialdir=os.getcwd(),
+                                 title="Select BMP folder:")
+    tk_root.lb2.configure(text=answer)
 
-def remove_blank(fd, portion):
-    ratio = delete_blank.delete_blank(fd, portion)
-    str1 = 'Non-blank/blank ratio: %.2f'%ratio
-    messagebox.showinfo("Dataset stats", str1)
+def clicked2():
+    answer = filedialog.askdirectory(parent=tk_root,
+                                 initialdir=os.getcwd(),
+                                 title="Select JSON folder:")
+    tk_root.lb4.configure(text=answer)
 
-def btn1_callback():
-    fd = askdirectory(title=R'Choose "Slice" directory')
-    if len(fd) == 0:
-        return
-    remove_blank(fd, 0.2)
+def clicked3():
+    answer = filedialog.askdirectory(parent=tk_root,
+                                 initialdir=os.getcwd(),
+                                 title="Select result folder:")
+    tk_root.lb6.configure(text=answer)
 
-def btn2_callback():
-    fd = askdirectory(title=R'Choose "Slice" directory')
-    if len(fd) == 0:
-        return
-    remove_blank(fd, 0.4)
+def clicked4():
+    detect_folder = tk_root.lb2['text']
+    json_folder = tk_root.lb4['text']
+    output_path = tk_root.lb6['text']
+    bmal.batch_cal(json_folder, detect_folder,output_path)
+    messagebox.showinfo('Progress Information', 'Calculation finished')
+
 
 def build_page(root):
-    global tk_root 
+    global tk_root
     tk_root = root
+    window = root
+    tk_root.lb1 = Label(window, text="BMP file path: ", font=("Arial", 10))
+    tk_root.lb1.grid(column = 0, row = 1)
+    tk_root.lb2 = Label(window, text =" ", font=("Arial", 10))
+    tk_root.lb2.grid(column = 1, row = 1)
+    tk_root.lb3 = Label(window, text="JSON file path: ", font=("Arial", 10))
+    tk_root.lb3.grid(column = 0, row = 4)
+    tk_root.lb4 = Label(window, text =" ", font=("Arial", 10))
+    tk_root.lb4.grid(column = 1, row = 4)
+    tk_root.lb5 = Label(window, text="Output file path: ", justify=LEFT, 
+                font=("Arial", 10))
+    tk_root.lb5.grid(column = 0, row = 6)
+    tk_root.lb6 = Label(window, text =" ", font=("Arial", 10))
+    tk_root.lb6.grid(column = 1, row = 6)
 
-    btn0 = Button(root, text=R" Get Blank/Non Blank Stats", command=foo, 
-            height=1,
-            width=100,  
-            font=('Helvetica', '16'))
-    btn0.pack(padx=(100,100), pady=(40,40))
+    btn1 = Button(window, text="Select the folder contains detection result (.bmp)", 
+              command = clicked)
+    btn1.grid(column = 0, row = 0)
 
-    tk_root.photo092 = PhotoImage(file=os.path.join('icon', "slicemagic.png"))
-    btn0.config(image=tk_root.photo092, compound="left", 
-                height="60",
-                width="400")
+    btn2 = Button(window, text="Select the folder contains the tags (.json)", 
+              command = clicked2)
+    btn2.grid(column = 0, row = 3)      
 
-    btn1 = Button(root, text=R" Remove 20% blank images ", command=btn1_callback, 
-            height=1,
-            width=100,  
-            font=('Helvetica', '16'))
-    btn1.pack(padx=(100,100), pady=(40,40))
-    tk_root.photo_098 = PhotoImage(file=os.path.join('icon', "trim.png"))
-    btn1.config(image=tk_root.photo_098, compound="left", 
-                height="60",
-                width="400")
+    btn3 = Button(window, text="Select the folder to store the calculation result", 
+              command = clicked3)
+    btn3.grid(column = 0, row = 5)
 
-    btn1 = Button(root, text=R" Remove 40% blank images ", command=btn2_callback, 
-            height=1,
-            width=100,  
-            font=('Helvetica', '16'))
-    btn1.pack(padx=(100,100), pady=(40,40))
-    tk_root.photo_099 = PhotoImage(file=os.path.join('icon', "trim.png"))
-    btn1.config(image=tk_root.photo_099, compound="left", 
-                height="60",
-                width="400")
+    btn4 = Button(window, text="Start Calculation", 
+              command = clicked4)
+    btn4.grid(column = 2, row = 8) 
