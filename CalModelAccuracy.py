@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # ### Calculate the Model's accuracy and prediction rate
-import pandas as pd
+# import pandas as pd
 import numpy as np
 
 # get the TN value based on TP, FP, FN and image shape
@@ -39,16 +39,27 @@ def model_accuracy(TP, TN, tot_pixels):
 
 # return confusion matrix
 def confusion_matrix(TP, TN, FP, FN):
+    '''
     col_name = ["True Structure", "True Background", "Predict Total"]
     row_name = ["Predict Structure", "Predict Background", "True Total"]
     
     cf_matrix = np.array([[TP, FP, TP + FP],
                           [FN, TN, FN + TN],
                           [TP + FN, FP + TN, TP + FP + TN + FN]])
+    '''
     
-    df = pd.DataFrame(cf_matrix, row_name, col_name)
-    print(format_matrix(df))    
-    return df 
+    
+    cf_matrix = np.array([[" ","True Structure", "True Background", "Predict Total", "Unit"],
+                          ["Predict Structure",TP, 
+                           FP, TP + FP, '1pixel'],
+                          ["Predict Background",FN, 
+                           TN,(FN + TN), '1pixel'],
+                          ["True Total",(TP + FN), (FP + TN), 
+                           (TP + FP + TN + FN), '1pixel']])
+    
+    # df = pd.DataFrame(cf_matrix, row_name, col_name)
+    # print(format_matrix(df))    
+    return cf_matrix 
 
 
 # Specificity= TN/(TN+FP) = TN/(Actual No)
@@ -75,6 +86,7 @@ def prevalence_rate(FN, TP, tot_pixels):
     
 # Cohen's Kappa
 # input is the confusion matrix
+'''
 def kappa_rate(cf_matrix):        
     NM = cf_matrix.iloc[0,2] * cf_matrix.iloc[2,0]
     GC = cf_matrix.iloc[1,2] * cf_matrix.iloc[2,1]
@@ -92,6 +104,24 @@ def format_matrix(df):
     new_matrix = new_df.round(1)
     new_matrix['Unit'] = '100K'
     return new_matrix
+'''
+
+def format_matrix(cf_matrix):
+    cf_matrix[1][1] = round(float(cf_matrix[1][1])/100000, 1)
+    cf_matrix[1][2] = round(float(cf_matrix[1][2])/100000, 1)
+    cf_matrix[1][3] = round(float(cf_matrix[1][3])/100000, 1)
+    cf_matrix[2][1] = round(float(cf_matrix[2][1])/100000, 1)
+    cf_matrix[2][2] = round(float(cf_matrix[2][2])/100000, 1)
+    cf_matrix[2][3] = round(float(cf_matrix[2][3])/100000, 1)
+    cf_matrix[3][1] = round(float(cf_matrix[3][1])/100000, 1)
+    cf_matrix[3][2] = round(float(cf_matrix[3][2])/100000, 1)
+    cf_matrix[3][3] = round(float(cf_matrix[3][3])/100000, 1)
+    cf_matrix[1][4] = '100k'
+    cf_matrix[2][4] = '100k'
+    cf_matrix[3][4] = '100k'
+    return cf_matrix
+    
+    
 
 # F1 score = 2*(Precison * Recall)/ (Precision + Recall)
 def F1_score(TP, FP, FN):

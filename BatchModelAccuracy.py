@@ -6,7 +6,7 @@ import os
 import io
 import cv2
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import json
 import time
 
@@ -87,13 +87,13 @@ def write_log(file, info_txt):
         f.write('\n')
         f.write('\n')
 
-
+'''
 def format_matrix(df):
     new_df = df.div(100000)
     new_matrix = new_df.round(1)
     new_matrix['Unit'] = '100K'
     return new_matrix
-        
+'''        
         
 
 # batch calculation, calculate the accuracy of detection results
@@ -147,28 +147,58 @@ def batch_cal(json_folder, detect_folder,output_path):
                                                                                             img_width,
                                                                                             img_height)
                     # write the confusion matrix into single csv file
-                    cf_matrix.to_csv(os.path.join(output_path,filename+'_Confusion_matrix.csv'),header = True)
+                    # cf_matrix.to_csv(os.path.join(output_path,filename+'_Confusion_matrix.csv'),header = True)
+                    np.savetxt(os.path.join(output_path,
+                                            filename+'_Confusion_matrix.txt'),
+                               cf_matrix, fmt = "%20s")
+                    cf_m = cma.format_matrix(cf_matrix)
+                    new_cf = np.array2string(cf_m, max_line_width = 200,
+                                             formatter = {'str_kind': lambda cf_m: "%20s" % cf_m})
+                    new_cf = new_cf.replace("[", "")
+                    new_cf = new_cf.replace("]", "")
+                    
                     info_txt = "Detection Accuracy for - "+ imgname +':\n' +\
                     "The model's precision is: " + str(round(precision_rate,1)) + '%.\n' +\
                     "The model's recall is: "+  str(round(recall_rate,1)) + '%.\n' +\
                     "The model's accuracy is: " + str(round(accuracy_rate,1))+ '%.\n' +\
                     "Confusion Matrix:" + '\n' +\
-                    format_matrix(cf_matrix).to_string() + '\n'
+                    new_cf + '\n'
+                    # cma.format_matrix(cf_matrix) + '\n'
                     # cf_matrix.to_string()
                     
                     write_log(os.path.join(output_path,"Model_accuracy_log.txt"), info_txt)
-                    cv2.imwrite(os.path.join(output_path,filename+'_ground_true.png'),tagged_img)
                     overall_precision += precision_rate
                     overall_recall += precision_rate
                     overall_accuracy += accuracy_rate
                     num_img += 1
                     # tot_cf = tot_cf + cf_matrix
+                    '''
                     if num_img == 1:
                         tot_cf = cf_matrix
                     else:
                         tot_cf = tot_cf + cf_matrix
                     print("\n")
-                    
+                    '''
+                    if num_img == 1:
+                        tot_cf = cf_matrix
+                    else:
+                        tot_cf[1][1] = round(float(tot_cf[1][1]) + float(cf_matrix[1][1]), 1)
+                        tot_cf[1][2] = round(float(tot_cf[1][2]) + float(cf_matrix[1][2]), 1)
+                        tot_cf[1][3] = round(float(tot_cf[1][3]) + float(cf_matrix[1][3]), 1)
+                        tot_cf[2][1] = round(float(tot_cf[2][1]) + float(cf_matrix[2][1]), 1)
+                        tot_cf[2][2] = round(float(tot_cf[2][2]) + float(cf_matrix[2][2]), 1)
+                        tot_cf[2][3] = round(float(tot_cf[2][3]) + float(cf_matrix[2][3]), 1)
+                        tot_cf[3][1] = round(float(tot_cf[3][1]) + float(cf_matrix[3][1]), 1)
+                        tot_cf[3][2] = round(float(tot_cf[3][2]) + float(cf_matrix[3][2]), 1)
+                        tot_cf[3][3] = round(float(tot_cf[3][3]) + float(cf_matrix[3][3]), 1)
+                        
+                    # print(cf_matrix)
+
+                    # print(tot_cf)
+  
+                    print("\n")
+
+
                 else:
                     print("JSON file for "+ file_name +" is not found!" +"\n")
                     info_txt = "JSON file for "+ file_name +" is not found!" +'\n'
@@ -176,20 +206,31 @@ def batch_cal(json_folder, detect_folder,output_path):
                     
     
     if num_img > 0:
+        
+        
+        new_tot = np.array2string(tot_cf, max_line_width = 200,
+                                  formatter = {'str_kind': lambda tot_cf: "%20s" % tot_cf})
+        new_tot = new_tot.replace("[", "")
+        new_tot = new_tot.replace("]", "")
+        
         info_txt = "Overall Detection Accuracy: "+'\n' +\
         "The model's avg precision is: " +\
         str(round(overall_precision/num_img,1)) + '%.\n' +\
         "The model's avg recall is: "+\
         str(round(overall_recall/num_img,1)) + '%.\n' +\
         "The model's avg overall accuracy is: " +\
-        str(round(overall_accuracy/num_img,1))+ '%.\n'+\
+        str(round(overall_accuracy/num_img,1))+ '%.\n' +\
+        new_tot + '\n'
+
+        '''
+        +\
         "Confusion Matrix:" + '\n' +\
         format_matrix(tot_cf).to_string()
         # tot_cf.to_string()
-        
-        print("The final confusion matrix:")
-        print(format_matrix(tot_cf))
-        tot_cf.to_csv(os.path.join(output_path,'Confusion_Matrix.csv'),header = True)
+        '''
+        # print("The final confusion matrix:")
+        # print(format_matrix(tot_cf))
+        # tot_cf.to_csv(os.path.join(output_path,'Confusion_Matrix.csv'),header = True)
         write_log(os.path.join(output_path,"Model_accuracy_log.txt"), info_txt)
 
 
