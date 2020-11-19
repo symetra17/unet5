@@ -13,7 +13,7 @@ def path_insert_foldr(filename, folder):
     splited = os.path.split(filename)
     return os.path.join(splited[0], folder, splited[1])
 
-def recombine(src_img_file, start_pos, output_folder):
+def recombine(src_img_file, start_pos, output_folder, post_scale=1):
     
     '''This function collects fragment image and forms a larger images'''
 
@@ -61,7 +61,10 @@ def recombine(src_img_file, start_pos, output_folder):
     # Crop result images to remove zeros padding on the right and bottom size of the image.
     outname = remove_ext(src_img_file) + '_result.tif'
     outname = os.path.join(output_folder, os.path.split(outname)[1])
-    geotiff.imwrite(outname, img[0:crop_size[0], 0:crop_size[1], :])
+    out_img = img[0:crop_size[0], 0:crop_size[1],:]
+    if post_scale > 1:
+        out_img = cv2.resize(out_img, None, fx=post_scale, fy=post_scale)
+    geotiff.imwrite(outname, out_img)
     return
 
 def recombine2(src_img_file, start_pos, output_folder):

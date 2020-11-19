@@ -48,10 +48,6 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     if isinstance(inp, six.string_types):
         inp = geotiff.imread(inp)
     
-    # remove ASAP
-    inp = inp[:,:,0:4]
-    #
-
     orininal_h = inp.shape[0]
     orininal_w = inp.shape[1]
 
@@ -131,46 +127,6 @@ def predict_multiple(model=None, inps=None, inp_dir=None, out_dir=None,
 
 
 def evaluate( model=None , inp_images=None , annotations=None,inp_images_dir=None ,annotations_dir=None , checkpoints_path=None ):
-    
-    if model is None:
-        assert (checkpoints_path is not None) , "Please provide the model or the checkpoints_path"
-        model = model_from_checkpoint_path(checkpoints_path)
-        
-    if inp_images is None:
-        assert (inp_images_dir is not None) , "Please privide inp_images or inp_images_dir"
-        assert (annotations_dir is not None) , "Please privide inp_images or inp_images_dir"
-        
-        paths = get_pairs_from_paths(inp_images_dir , annotations_dir )
-        paths = list(zip(*paths))
-        inp_images = list(paths[0])
-        annotations = list(paths[1])
-        
-    assert type(inp_images) is list
-    assert type(annotations) is list
-        
-    tp = np.zeros( model.n_classes  )
-    fp = np.zeros( model.n_classes  )
-    fn = np.zeros( model.n_classes  )
-    n_pixels = np.zeros( model.n_classes  )
-    
-    for inp , ann   in tqdm( zip( inp_images , annotations )):
-        pr = predict(model , inp )
-        gt = get_segmentation_array( ann , model.n_classes ,  model.output_width , model.output_height , no_reshape=True  )
-        gt = gt.argmax(-1)
-        pr = pr.flatten()
-        gt = gt.flatten()
-                
-        for cl_i in range(model.n_classes ):
-            
-            tp[ cl_i ] += np.sum( (pr == cl_i) * (gt == cl_i) )
-            fp[ cl_i ] += np.sum( (pr == cl_i) * ((gt != cl_i)) )
-            fn[ cl_i ] += np.sum( (pr != cl_i) * ((gt == cl_i)) )
-            n_pixels[ cl_i ] += np.sum( gt == cl_i  )
-            
-    cl_wise_score = tp / ( tp + fp + fn + 0.000000000001 )
-    n_pixels_norm = n_pixels /  np.sum(n_pixels)
-    frequency_weighted_IU = np.sum(cl_wise_score*n_pixels_norm)
-    mean_IU = np.mean(cl_wise_score)
-    return {"frequency_weighted_IU":frequency_weighted_IU , "mean_IU":mean_IU , "class_wise_IU":cl_wise_score }
+    pass
 
 
