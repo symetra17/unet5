@@ -91,15 +91,12 @@ def single_predict(fname, class_name, output_folder, fname_dsm=None):
 
     if down_scale > 1:
         im = geotiff.imread(fname)
-
         if len(im.shape) < 3:
             im = np.expand_dims(im,axis=2)
-
         assert len(im.shape) > 2        # color
-        #assert im.shape[2] == 4         # 4 channels
         if fname_dsm is not None:
             dsm = geotiff.imread(fname_dsm)
-            assert len(dsm.shape) == 2
+            dsm = dsm[:,:,0]
             dsm = np.expand_dims(dsm, axis=2)
             im = np.concatenate((im, dsm), axis=2)
             assert im.shape[2] == 5         # 5 channels
@@ -124,13 +121,14 @@ def single_predict(fname, class_name, output_folder, fname_dsm=None):
         model_init.init(n_sub_cls, bands, my_size, str(chk_point_path))
         model_init.do_prediction(f)
     cv2.destroyWindow('Predict')
-    recombine(fname, start_pos, output_folder)
+    recombine(fname, start_pos, output_folder, down_scale)
     res_file = recombine2(fname, start_pos, output_folder)
 
     img = cv2.imread(res_file)
     if down_scale > 1:
         img = cv2.resize(img,None,fx=down_scale,fy=down_scale)
         cv2.imwrite(res_file, img)
+        os.remove(ds_fname)
 
     if True or geotiff.is_geotif(src_fname):
         pid = mp.Process(target=gen_shape_proc.gen_shape_proc, name='gen_shape', 
@@ -322,7 +320,7 @@ def build_page(root):
 
     choices = cfg.cls_list
     tk_root.tkvar = StringVar(tk_root)
-    tk_root.tkvar.set('Farmland') # set the default option
+    tk_root.tkvar.set('Squatter') # set the default option
     style = ttk.Style()
     style.configure('my.TMenubutton', font=('Arial', 30, 'bold'))
     tk_root.popupMenu = OptionMenu(root.frame1, tk_root.tkvar, *choices, command=menu_callback)
@@ -362,7 +360,7 @@ def build_page(root):
             font=('Helvetica', '20'))    
     btn2.pack(pady=(10,10))
     root.btn2 = btn2
-    root.btn2['state'] = 'disable'
+    #root.btn2['state'] = 'disable'
 
     tk_root.photo619 = PhotoImage(file=os.path.join('icon', "DSM_sel.png"))
     btn2.config(image=tk_root.photo619,compound="left", 
