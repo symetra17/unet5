@@ -182,27 +182,28 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
             im = geotiff.imread(im)
             seg = cv2.imread(seg, 1)
 
-            random_bit = random.getrandbits(1)
-            if bool(random_bit):
-                im = cv2.flip(im, 0)
-                seg = cv2.flip(seg, 0)
-
-            random_bit = random.getrandbits(1)
-            if bool(random_bit):
-                im = cv2.flip(im, 1)
-                seg = cv2.flip(seg, 1)
-
-            random_bit = random.getrandbits(1)
-            if bool(random_bit):
+            if do_augment:
+                
                 random_bit = random.getrandbits(1)
                 if bool(random_bit):
-                    iaa_ops = iaa.Rot90(1, keep_size=False)
-                    im = iaa_ops.augment_image(im)
-                    seg = iaa_ops.augment_image(seg)
-                else:
-                    iaa_ops = iaa.Rot90(3, keep_size=False)
-                    im = iaa_ops.augment_image(im)
-                    seg = iaa_ops.augment_image(seg)
+                    im = cv2.flip(im, 0)
+                    seg = cv2.flip(seg, 0)
+                random_bit = random.getrandbits(1)
+                if bool(random_bit):
+                    im = cv2.flip(im, 1)
+                    seg = cv2.flip(seg, 1)
+                
+                random_bit = random.getrandbits(1)
+                if bool(random_bit):
+                    random_bit = random.getrandbits(1)
+                    if bool(random_bit):
+                        iaa_ops = iaa.Rot90(1, keep_size=False)
+                        im = iaa_ops.augment_image(im)
+                        seg = iaa_ops.augment_image(seg)
+                    else:
+                        iaa_ops = iaa.Rot90(3, keep_size=False)
+                        im = iaa_ops.augment_image(im)
+                        seg = iaa_ops.augment_image(seg)
 
             X.append(get_image_array(im, input_width,
                                    input_height, ordering=IMAGE_ORDERING))
