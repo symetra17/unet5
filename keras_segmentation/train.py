@@ -51,7 +51,8 @@ def train(model,
           auto_resume_checkpoint=False,
           load_weights=None,
           steps_per_epoch=512,
-          cls_name = ''
+          cls_name = '',
+          do_augment=True
           ):
 
     from .models.all_models import model_from_name
@@ -90,15 +91,15 @@ def train(model,
     for ep in range(epochs):
         print("Starting Epoch ", ep)
 
-        print('Re-cut training set')
-        json_conv.xxx(train_src_dir, cls_name, 'a')
+        #print('Re-cut training set')
+        #json_conv.xxx(train_src_dir, cls_name, 'a')
 
         train_images = os.path.join(train_src_dir,'slice'+'a', 'image')
         train_annotations = os.path.join(train_src_dir, 'slice'+'a', 'annotation')
 
         train_gen = image_segmentation_generator(
             train_images, train_annotations,  batch_size,  n_classes,
-            input_height, input_width, output_height, output_width,do_augment=True)
+            input_height, input_width, output_height, output_width,do_augment=do_augment)
         files = glob.glob(os.path.join(train_src_dir,'slice'+'a','image','*.*'))
         nfiles = len(files)
         steps_per_epoch = 1 + nfiles//batch_size
