@@ -101,7 +101,7 @@ def format_matrix(df):
 # the json folder stores json files
 # the folder stores all the detection result in bmp format
 # the folder to store accuracy result
-def batch_cal(json_folder, detect_folder,output_path):
+def batch_cal(json_folder, detect_folder, output_path):
     log_path = output_path
     create_log(log_path)
     info_txt = "The detection results are in - " + detect_folder+'\n' +\
@@ -117,92 +117,89 @@ def batch_cal(json_folder, detect_folder,output_path):
     # col_name = ["True Structure", "True Background", "True Total"]
     # row_name = ["Predict Structure", "Predict Background", "Predict Total"]
     # tot_cf = pd.DataFrame(empty_data, row_name, col_name)
-    
-    for root, dirs, files in os.walk(detect_folder, topdown=False):
-        for name in files:
-            if os.path.splitext(os.path.join(root, name))[1].lower() == ".bmp":
+    import glob
+    files = glob.glob(os.path.join(detect_folder, '*.bmp'))
+    json_files = glob.glob(os.path.join(json_folder, "*.json"))
+
+
+    if True:
+            for k in range(len(files)):
                 # filename is the bmp file name
-                filename = name.split('.')[0]
-                imgname = filename.split('_')[0]
-                predict_path = os.path.join(root, name)
-                json_path = os.path.join(json_folder, imgname) + ".json"
-                                              
+                filename = os.path.splitext(files[k])[0]        #name.split('.')[0]
+                imgname = files[k]    # filename.split('_')[0]
+                #predict_path = os.path.join(root, name)
+                json_path = json_files[k]  #os.path.join(json_folder, imgname) + ".json"
+
+                print("Accuracy Assesment for %s:" %imgname)
+                predict_img = cv2.imread(files[k])
+                json_data = retrive_json_data(json_path)
+                tagged_img, img_width, img_height = obtain_tagged_image(json_data)
+                img_overlap = cv2.bitwise_and(tagged_img, predict_img, mask =None)
                 
-                if os.path.isfile(json_path):
-                    print("Accuracy Assesment for %s:" %imgname)
-                    predict_img = cv2.imread(predict_path)
-                    json_data = retrive_json_data(json_path)
-                    tagged_img, img_width, img_height = obtain_tagged_image(json_data)
-                    img_overlap = cv2.bitwise_and(tagged_img, predict_img, mask =None)
-                    
-                    # calculate the area of the tagged, predicted and overlapped
-                    overlap_area = obtain_area(img_overlap)
-                    tagged_area = obtain_area(tagged_img)
-                    predict_area = obtain_area(predict_img)
-                    # calculte the precision_rate, recall_rate, accuracy_rate 
-                    # and confusion Matrix of the dection result
-                    precision_rate, recall_rate, accuracy_rate, cf_matrix = obtain_accuracy(overlap_area,
-                                                                                            tagged_area,
-                                                                                            predict_area,
-                                                                                            img_width,
-                                                                                            img_height)
-                    # write the confusion matrix into single csv file
-                    # cf_matrix.to_csv(os.path.join(output_path,filename+'_Confusion_matrix.csv'),header = True)
-                    np.savetxt(os.path.join(output_path,
-                                            filename+'_Confusion_matrix.txt'),
-                               cf_matrix, fmt = "%20s")
-                    cf_m = cma.format_matrix(cf_matrix)
-                    new_cf = np.array2string(cf_m, max_line_width = 200,
-                                             formatter = {'str_kind': lambda cf_m: "%20s" % cf_m})
-                    new_cf = new_cf.replace("[", "")
-                    new_cf = new_cf.replace("]", "")
-                    
-                    info_txt = "Detection Accuracy for - "+ imgname +':\n' +\
-                    "The model's precision is: " + str(round(precision_rate,1)) + '%.\n' +\
-                    "The model's recall is: "+  str(round(recall_rate,1)) + '%.\n' +\
-                    "The model's accuracy is: " + str(round(accuracy_rate,1))+ '%.\n' +\
-                    "Confusion Matrix:" + '\n' +\
-                    new_cf + '\n'
-                    # cma.format_matrix(cf_matrix) + '\n'
-                    # cf_matrix.to_string()
-                    
-                    write_log(os.path.join(output_path,"Model_accuracy_log.txt"), info_txt)
-                    overall_precision += precision_rate
-                    overall_recall += precision_rate
-                    overall_accuracy += accuracy_rate
-                    num_img += 1
-                    # tot_cf = tot_cf + cf_matrix
-                    '''
-                    if num_img == 1:
-                        tot_cf = cf_matrix
-                    else:
-                        tot_cf = tot_cf + cf_matrix
-                    print("\n")
-                    '''
-                    if num_img == 1:
-                        tot_cf = cf_matrix
-                    else:
-                        tot_cf[1][1] = round(float(tot_cf[1][1]) + float(cf_matrix[1][1]), 1)
-                        tot_cf[1][2] = round(float(tot_cf[1][2]) + float(cf_matrix[1][2]), 1)
-                        tot_cf[1][3] = round(float(tot_cf[1][3]) + float(cf_matrix[1][3]), 1)
-                        tot_cf[2][1] = round(float(tot_cf[2][1]) + float(cf_matrix[2][1]), 1)
-                        tot_cf[2][2] = round(float(tot_cf[2][2]) + float(cf_matrix[2][2]), 1)
-                        tot_cf[2][3] = round(float(tot_cf[2][3]) + float(cf_matrix[2][3]), 1)
-                        tot_cf[3][1] = round(float(tot_cf[3][1]) + float(cf_matrix[3][1]), 1)
-                        tot_cf[3][2] = round(float(tot_cf[3][2]) + float(cf_matrix[3][2]), 1)
-                        tot_cf[3][3] = round(float(tot_cf[3][3]) + float(cf_matrix[3][3]), 1)
-                        
-                    # print(cf_matrix)
-
-                    # print(tot_cf)
-  
-                    print("\n")
-
-
+                # calculate the area of the tagged, predicted and overlapped
+                overlap_area = obtain_area(img_overlap)
+                tagged_area = obtain_area(tagged_img)
+                predict_area = obtain_area(predict_img)
+                # calculte the precision_rate, recall_rate, accuracy_rate 
+                # and confusion Matrix of the dection result
+                precision_rate, recall_rate, accuracy_rate, cf_matrix = obtain_accuracy(overlap_area,
+                                                                                        tagged_area,
+                                                                                        predict_area,
+                                                                                        img_width,
+                                                                                        img_height)
+                # write the confusion matrix into single csv file
+                # cf_matrix.to_csv(os.path.join(output_path,filename+'_Confusion_matrix.csv'),header = True)
+                np.savetxt(os.path.join(output_path,
+                                        filename+'_Confusion_matrix.txt'),
+                           cf_matrix, fmt = "%20s")
+                cf_m = cma.format_matrix(cf_matrix)
+                new_cf = np.array2string(cf_m, max_line_width = 200,
+                                         formatter = {'str_kind': lambda cf_m: "%20s" % cf_m})
+                new_cf = new_cf.replace("[", "")
+                new_cf = new_cf.replace("]", "")
+                
+                info_txt = "Detection Accuracy for - "+ imgname +':\n' +\
+                "The model's precision is: " + str(round(precision_rate,1)) + '%.\n' +\
+                "The model's recall is: "+  str(round(recall_rate,1)) + '%.\n' +\
+                "The model's accuracy is: " + str(round(accuracy_rate,1))+ '%.\n' +\
+                "Confusion Matrix:" + '\n' +\
+                new_cf + '\n'
+                # cma.format_matrix(cf_matrix) + '\n'
+                # cf_matrix.to_string()
+                
+                write_log(os.path.join(output_path,"Model_accuracy_log.txt"), info_txt)
+                overall_precision += precision_rate
+                overall_recall += precision_rate
+                overall_accuracy += accuracy_rate
+                num_img += 1
+                # tot_cf = tot_cf + cf_matrix
+                '''
+                if num_img == 1:
+                    tot_cf = cf_matrix
                 else:
-                    print("JSON file for "+ file_name +" is not found!" +"\n")
-                    info_txt = "JSON file for "+ file_name +" is not found!" +'\n'
-                    write_log(os.path.join(output_path,"Model_accuracy_log.txt"), info_txt)
+                    tot_cf = tot_cf + cf_matrix
+                print("\n")
+                '''
+                if num_img == 1:
+                    tot_cf = cf_matrix
+                else:
+                    tot_cf[1][1] = round(float(tot_cf[1][1]) + float(cf_matrix[1][1]), 1)
+                    tot_cf[1][2] = round(float(tot_cf[1][2]) + float(cf_matrix[1][2]), 1)
+                    tot_cf[1][3] = round(float(tot_cf[1][3]) + float(cf_matrix[1][3]), 1)
+                    tot_cf[2][1] = round(float(tot_cf[2][1]) + float(cf_matrix[2][1]), 1)
+                    tot_cf[2][2] = round(float(tot_cf[2][2]) + float(cf_matrix[2][2]), 1)
+                    tot_cf[2][3] = round(float(tot_cf[2][3]) + float(cf_matrix[2][3]), 1)
+                    tot_cf[3][1] = round(float(tot_cf[3][1]) + float(cf_matrix[3][1]), 1)
+                    tot_cf[3][2] = round(float(tot_cf[3][2]) + float(cf_matrix[3][2]), 1)
+                    tot_cf[3][3] = round(float(tot_cf[3][3]) + float(cf_matrix[3][3]), 1)
+                    
+                # print(cf_matrix)
+
+                # print(tot_cf)
+  
+                print("\n")
+
+
                     
     
     if num_img > 0:
