@@ -91,8 +91,8 @@ def train(model,
     for ep in range(epochs):
         print("Starting Epoch ", ep)
 
-        #print('Re-cut training set')
-        #json_conv.xxx(train_src_dir, cls_name, 'a')
+        print('Re-cut training set')
+        json_conv.xxx(train_src_dir, cls_name, 'a')
 
         train_images = os.path.join(train_src_dir,'slice'+'a', 'image')
         train_annotations = os.path.join(train_src_dir, 'slice'+'a', 'annotation')
@@ -100,16 +100,15 @@ def train(model,
         train_gen = image_segmentation_generator(
             train_images, train_annotations,  batch_size,  n_classes,
             input_height, input_width, output_height, output_width,do_augment=do_augment)
-        files = glob.glob(os.path.join(train_src_dir,'slice'+'a','image','*.*'))
+        files = glob.glob(os.path.join(train_src_dir,'slice'+'a','image','*.tif'))
         nfiles = len(files)
         steps_per_epoch = 1 + nfiles//batch_size
-        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=8)
-
+        history_callback = model.fit_generator(train_gen, steps_per_epoch, epochs=2)
 
         loss_history = history_callback.history["loss"]
-        fid=open('loss_history.txt','a')
+        fid=open('train.log','a')
         fid.write('epochs: %03d  '%ep)
-        fid.write(str(loss_history))
+        fid.write('%.4f'%(loss_history[0]))
         fid.write('\n')
         fid.close()
 

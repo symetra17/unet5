@@ -43,7 +43,7 @@ def get_pairs_from_paths(images_path, segs_path, ignore_non_matching=False):
         the segmentation images from the segs_path directory
         while checking integrity of data """
 
-    ACCEPTABLE_IMAGE_FORMATS = [".jpg", ".jpeg", ".png", '.tif']
+    ACCEPTABLE_IMAGE_FORMATS = ['.tif']   # [".jpg", ".jpeg", ".png", '.tif']
     ACCEPTABLE_SEGMENTATION_FORMATS = [".png"]
 
     image_files = []
@@ -81,26 +81,17 @@ def get_image_array(image_input, width, height, imgNorm="sub_mean",
                   ordering='channels_first'):
     """ Load image array from input """
     img = image_input
-
-    if imgNorm == "sub_and_divide":
-        img = np.float32(cv2.resize(img, (width, height))) / 127.5 - 1
-    elif imgNorm == "sub_mean":
-        #img = cv2.resize(img, (width, height))
-        img = img.astype(np.float32)
-        img[:, :, 0] -= 110.0
-        img[:, :, 1] -= 110.0
-        img[:, :, 2] -= 110.0
-
-        if img.shape[2] > 3:
-            img[:, :, 3] -= 125.0
-        img = img[:, :, ::-1]
-    elif imgNorm == "divide":
-        img = cv2.resize(img, (width, height))
-        img = img.astype(np.float32)
-        img = img/255.0
-
-    if ordering == 'channels_first':
-        img = np.rollaxis(img, 2, 0)
+    img = img.astype(np.float32)
+    img[:, :, 0] -= 110.0
+    img[:, :, 1] -= 110.0
+    img[:, :, 2] -= 110.0
+    if img.shape[2] > 3:
+        img[:, :, 3] -= 125.0
+    # dsm normalization
+    img[:,:,4] = img[:,:,4] - img[:,:,4].min()
+    img[:,:,4] = img[:,:,4]/(img[:,:,4].max()+1.0)
+    
+    img = img[:, :, ::-1]
     return img
 
 

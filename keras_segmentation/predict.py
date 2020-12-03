@@ -45,9 +45,12 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     assert((type(inp) is np.ndarray) or isinstance(inp, six.string_types)
            ), "Inupt should be the CV image or the input file name"
 
-    if isinstance(inp, six.string_types):
-        inp = geotiff.imread(inp)
-    
+    inp = geotiff.imread(inp)
+
+    if inp.shape[2] == 5:
+        inp[:,:,4] = inp[:,:,4] - inp[:,:,4].min()
+        inp[:,:,4] = inp[:,:,4]/(inp[:,:,4].max()+1)
+
     orininal_h = inp.shape[0]
     orininal_w = inp.shape[1]
 
@@ -64,7 +67,7 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None, out_fna
     seg_img = cv2.resize(inp[:,:,0:3], (output_height, output_width), interpolation=cv2.INTER_AREA)
     colors = class_colors
 
-    img_overlay = np.zeros_like(seg_img)
+    img_overlay = seg_img.copy()
 
     ch0 = img_overlay[:,:,0]
     ch1 = img_overlay[:,:,1]
