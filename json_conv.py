@@ -13,6 +13,7 @@ import multiprocessing as mp
 import random
 import time
 from itertools import repeat
+from math import sin, cos, radians
 
 
 
@@ -59,8 +60,25 @@ def skimage_rotate(im_file_name, img, n, angle, dn_scale):
     img_ls = []
     n_layer = img.shape[2]
     for k in range(n_layer):
-        img1 = skimage.transform.rotate(img[:,:,k], angle, resize=True, 
-                        mode='constant', cval=-1.0, preserve_range=True)
+        
+        warp_dst = img[:,:,k]
+
+        h = warp_dst.shape[0] 
+        w = warp_dst.shape[1] 
+        new_h = abs(h*cos(radians(angle))) + abs(w*sin(radians(angle)))
+        new_w = abs(h*sin(radians(angle))) + abs(w*cos(radians(angle)))
+        dx = new_w - w
+        dy = new_h - h
+        center = ( warp_dst.shape[1]//2, warp_dst.shape[0]//2 )
+        rot_mat = cv2.getRotationMatrix2D( center, angle, 1.0 )
+        rot_mat[0, 2] += int(dx/2)    # shift x
+        rot_mat[1, 2] += int(dy/2)    # shift y
+        img1 = cv2.warpAffine(warp_dst, rot_mat, 
+            (int(new_w), int(new_h)), borderValue = -1)
+
+        #img1 = skimage.transform.rotate(img[:,:,k], angle, resize=True, 
+        #                mode='constant', cval=-1.0, preserve_range=True)
+
         if dn_scale != 1:
             img1 = cv2.resize(img1, None, fx=1/dn_scale, fy=1/dn_scale, 
                 interpolation=cv2.INTER_AREA)
@@ -75,11 +93,28 @@ def skimage_rotate(im_file_name, img, n, angle, dn_scale):
 
     img1 = out_img.astype(np.half)
     np.save(os.path.splitext(im_file_name)[0] + '_im_rot_%d'%n, img1)     # save it for use next time
-
+    # geotiff.imwrite('ROT_%d.tif'%n, img1[:,:,0:3].astype(np.uint8))
 
 def skimage_rotate_annot(im_file_name, anno_im, n, angle, dn_scale):
-    anno_im1 = skimage.transform.rotate(anno_im, angle, resize=True, 
-            mode='constant', cval=0, preserve_range=True)
+
+    warp_dst = anno_im
+
+    h = warp_dst.shape[0] 
+    w = warp_dst.shape[1] 
+    new_h = abs(h*cos(radians(angle))) + abs(w*sin(radians(angle)))
+    new_w = abs(h*sin(radians(angle))) + abs(w*cos(radians(angle)))
+    dx = new_w - w
+    dy = new_h - h
+    center = ( warp_dst.shape[1]//2, warp_dst.shape[0]//2 )
+    rot_mat = cv2.getRotationMatrix2D( center, angle, 1.0 )
+    rot_mat[0, 2] += int(dx/2)    # shift x
+    rot_mat[1, 2] += int(dy/2)    # shift y
+    anno_im1 = cv2.warpAffine(warp_dst, rot_mat, 
+                (int(new_w), int(new_h)), borderValue=0)
+
+    #anno_im1 = skimage.transform.rotate(anno_im, angle, resize=True, 
+    #        mode='constant', cval=0, preserve_range=True)
+
     if dn_scale != 1:
         anno_im1 = cv2.resize(anno_im1, None, fx=1/dn_scale, fy=1/dn_scale, 
             interpolation=cv2.INTER_AREA)
@@ -96,7 +131,7 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
 
     sub_anno = anno_im[ystart:yend, xstart:xend]
 
-    if sub_anno.max() ==255:   # if any pixel is marked as discard in json file
+    if sub_anno.max() == 255:   # if any pixel is marked as discard in json file
         return
 
     # Pad image to 1024 divisible
@@ -113,6 +148,7 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     sub_im = np.pad(sub_im, ((0,pady), (0,padx), (0,0) ) , 
                     mode='constant',constant_values=-1.0)
     sub_anno = np.pad(sub_anno, ((0,pady), (0,padx)))
+
     assert sub_im.shape[0] == my_size
     assert sub_im.shape[1] == my_size
     assert sub_anno.shape[0] == my_size
@@ -124,7 +160,9 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     # too many pixel has rotated out of boundary area
     idx = np.where(sub_im[:,:,0] < 0)
     empty_ratio = len(idx[0]) / (my_size*my_size)
-    if empty_ratio > 0.4:
+    if empty_ratio > 0.9:
+        return
+    if empty_ratio > 0.5:
         return
 
     if int(np.percentile(sub_anno, 99)) == 0:
@@ -192,7 +230,6 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
     else:
 
         anglels = [-30, -20, -10, 0, 10, 20, 30]
-
         angle_idx = random.randint(0, len(anglels)-1)
         fname_im = os.path.splitext(im_file_name)[0] + '_im_rot_%d'%angle_idx
         fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%angle_idx
@@ -202,12 +239,10 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             t0 = time.time()
             print('Generating rotated img: ', os.path.split(im_file_name)[-1])
             img, anno_im = read_img_anno(inplist, im_file_name, cls_name)
-            
+
             for n, angle in enumerate(anglels):
-                print('rotating ', angle, ' deg')
                 skimage_rotate(im_file_name, img, n, angle, down_scale)
 
-            print('Rotating annotation')
             for n, angle in enumerate(anglels):
                 skimage_rotate_annot(im_file_name, anno_im, n, angle, down_scale)
 
@@ -216,6 +251,8 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
 
         img     = np.load(fname_im + '.npy')
         anno_im = np.load(fname_anno + '.npy').astype(np.uint8)
+
+    assert img.shape[0:2] == anno_im.shape[0:2]
 
     my_size = cls_cfg.my_size
     augm_x = int(cfg.augm_translate) * random.randint(0, my_size-1)
@@ -454,7 +491,7 @@ def calculate_accuracy(fname_json, fname_pred, out_txt_name):
 
 
 if __name__=='__main__':
-    inp_dir = R'C:\Users\dva\unet_dsm\weights\Squatter\TS-1'
+    inp_dir = R'C:\Users\dva\unet_dsm\TS-single'
     t0 = time.time()
     xxx(inp_dir, 'Squatter', 'a')
     t1 = time.time()
