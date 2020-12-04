@@ -499,11 +499,9 @@ def calculate_accuracy_dir(json_dir, pred_dir):
     json_files = glob.glob(os.path.join(json_dir, '*.json'))
     pred_files = glob.glob(os.path.join(pred_dir, '*result_bw.bmp'))
     out_files = []
-    for pred_fname in pred_files:
-        out_txt_name = os.path.splitext(pred_fname)[0] + '.txt'
-        out_files.append(out_txt_name)
+    out_txt_name = os.path.join(os.path.dirname(pred_files[0]), 'accuracy.txt')
     for n in range(len(json_files)):
-        calculate_accuracy(json_files[n], pred_files[n], out_files[n])
+        calculate_accuracy(json_files[n], pred_files[n], out_txt_name)
 
 if __name__=='__main__':
 
