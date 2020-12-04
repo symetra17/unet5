@@ -16,7 +16,6 @@ from itertools import repeat
 from math import sin, cos, radians
 
 
-
 def remove_ext(inp):
     # Remove filename extenstion, xxx123.jpg to xxx123
     return os.path.splitext(inp)[0]
@@ -60,9 +59,7 @@ def skimage_rotate(im_file_name, img, n, angle, dn_scale):
     img_ls = []
     n_layer = img.shape[2]
     for k in range(n_layer):
-        
         warp_dst = img[:,:,k]
-
         h = warp_dst.shape[0] 
         w = warp_dst.shape[1] 
         new_h = abs(h*cos(radians(angle))) + abs(w*sin(radians(angle)))
@@ -160,8 +157,6 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     # too many pixel has rotated out of boundary area
     idx = np.where(sub_im[:,:,0] < 0)
     empty_ratio = len(idx[0]) / (my_size*my_size)
-    if empty_ratio > 0.9:
-        return
     if empty_ratio > 0.5:
         return
 
@@ -226,7 +221,6 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
                 interpolation=cv2.INTER_AREA)
         anno_im = cv2.resize(anno_im, None, fx=1/down_scale, fy=1/down_scale, 
                 interpolation=0)
-
     else:
 
         anglels = [-30, -20, -10, 0, 10, 20, 30]
@@ -298,7 +292,7 @@ def mp_split(fname, cls_name, a_or_b):
     objects_list = y['shapes']
     split_label(objects_list, fname, cls_name, a_or_b)
 
-def xxx(foder, cls_name, a_or_b):
+def recut(foder, cls_name, a_or_b):
 
     def clean_folder(folder):
         try:
@@ -337,7 +331,7 @@ def xxx(foder, cls_name, a_or_b):
     for n in range(2):
         args = zip( files, repeat(cls_name), repeat(a_or_b) )
         pool.starmap(mp_split, args)
-
+    pool.terminate()
 
 
 def illustrate_dsm_mask(im_file_name, class_dict):
@@ -392,7 +386,7 @@ def illustrate_mask(im_file_name, json_fname):
     label_only_im = np.zeros_like(img)
     fill_colour = [(255,255,0)]
     for o in objects_list:
-        pts = np.array(o['points']).astype(np.int32) //4
+        pts = np.array(o['points']).astype(np.int32) 
         if o['label'] == 'discard':
             cv2.fillPoly(img_ol, [pts], (128,128,128) )
         else:
@@ -401,7 +395,7 @@ def illustrate_mask(im_file_name, json_fname):
                 fill_colour = (0,0,0)
             elif classid==1:
                 fill_colour = (0,255,255)   # (R,G,B)   
-            img_ol = cv2.polylines( img_ol, [pts], True, (0,255,0), 1 )
+            img_ol = cv2.polylines( img_ol, [pts], True, (0,255,0), 4 )
         
     anno_im = img * 0.3 + img_ol * 0.7
     geotiff.imwrite(remove_ext(im_file_name)+'_label.jpg', anno_im.astype(np.uint8))
@@ -490,12 +484,38 @@ def calculate_accuracy(fname_json, fname_pred, out_txt_name):
     return precis, recall
 
 
+def illustrate_mask_dir(img_dir, json_dir):
+
+    img_files = glob.glob(os.path.join(img_dir,'*result.tif'))
+    json_files = glob.glob(os.path.join(json_dir,'*.json'))
+    assert len(img_files) == len(json_files)
+    pair_ls = zip(img_files, json_files)
+    pool = mp.Pool(processes=12)
+    pool.starmap(illustrate_mask, pair_ls)
+    pool.terminate()
+
+
+def calculate_accuracy_dir(json_dir, pred_dir):
+    json_files = glob.glob(os.path.join(json_dir, '*.json'))
+    pred_files = glob.glob(os.path.join(pred_dir, '*result_bw.bmp'))
+    out_files = []
+    for pred_fname in pred_files:
+        out_txt_name = os.path.splitext(pred_fname)[0] + '.txt'
+        out_files.append(out_txt_name)
+    for n in range(len(json_files)):
+        calculate_accuracy(json_files[n], pred_files[n], out_files[n])
+
 if __name__=='__main__':
-    inp_dir = R'C:\Users\dva\unet_dsm\TS-single'
+
+    #illustrate_mask_dir(R"C:\Users\dva\unet5\result", R"C:\Users\dva\unet_dsm\test-set\gt" )
+    calculate_accuracy_dir(R"C:\Users\dva\unet_dsm\test-set\gt", R"C:\Users\dva\unet5\result")
+
+    quit()
+
+    inp_dir = R'C:\Users\dva\unet_dsm\weights\Squatter\TS-1'
     t0 = time.time()
     xxx(inp_dir, 'Squatter', 'a')
     t1 = time.time()
     print('Total time:  %.0f'%(t1-t0))
-    quit()
 
 
