@@ -12,7 +12,7 @@ import gdal
 import gdal_edit
 import os
 from osgeo import gdal_array
-
+gdal.PushErrorHandler('CPLQuietErrorHandler')
 Image.MAX_IMAGE_PIXELS = None
 
 def GetGeoInfo(FileName):
