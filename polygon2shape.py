@@ -23,19 +23,18 @@ def draw_polygon(objects, rasterTemp, outShp):
     srs = osr.SpatialReference()
     srs.ImportFromWkt( sourceRaster.GetProjectionRef() )
     outLayer = outDatasource.CreateLayer('predicted_object', srs, ogr.wkbPolygon)
-    newField = ogr.FieldDefn('Class', ogr.OFTInteger)
+    newField = ogr.FieldDefn('Class', ogr.OFTString)
     outLayer.CreateField(newField)
     outDatasource.Destroy()
     sourceRaster=None
     band=None
-    ioShpFile = ogr.Open(outShp, update = 1)
-    
+    ioShpFile = ogr.Open(outShp, update = 1)    
     lyr = ioShpFile.GetLayerByIndex(0)
     lyr.ResetReading()
     defn = lyr.GetLayerDefn()
     feat = ogr.Feature(defn)
     feat.SetField('id', 852)
-    feat.SetField('Class', 255)
+    feat.SetField('Class', 'Grave')
     for obj in objects:
         ring = ogr.Geometry(ogr.wkbLinearRing)
         for pt in obj:
@@ -46,18 +45,12 @@ def draw_polygon(objects, rasterTemp, outShp):
         geom = ogr.CreateGeometryFromWkt(str1)
         feat.SetGeometry(geom)      #feat.SetGeometry(geom)
         lyr.CreateFeature(feat)
-    #for n, i in enumerate(lyr):
-    #    print('FieldCount     ', i.GetGeomFieldCount())
-    #    print('GeomFieldCount ', i.GetGeomFieldCount())
-    #    print('GeometryRef    ', i.GetGeometryRef())    # POLYGON ((827775 832975,827825.05 832975.0,827825.05 832924.95,827775.0 832924.95,827775 832975))
-    #    print('GeomFieldRef   ', i.GetGeomFieldRef(0))
-    #    print('Class          ', i.GetField('Class'))
     ioShpFile.Destroy()
     return
 
 
 if __name__=='__main__':
-
+    # note that this file should accompanied by a TFW file
     fileName = R"C:\Users\dva\Pictures\20200218SA1_B05_6NE14D.TIF"
     
     ds = gdal.Open(fileName)
