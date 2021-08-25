@@ -1,15 +1,17 @@
 import warnings
 warnings.filterwarnings("ignore")
-
-from keras_segmentation.models.unet import vgg_unet, unet, resnet50_unet
 import guicfg as cfg
 import sys
 import os
-from keras.backend.tensorflow_backend import set_session
-import tensorflow as tf
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
 import datetime
+
+from multiprocessing import Process, current_process
+if current_process().name=='MainProcess':
+    from keras_segmentation.models.unet import vgg_unet, unet, resnet50_unet
+    from keras.backend.tensorflow_backend import set_session
+    import tensorflow as tf
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 
 if __name__=='__main__':
 
@@ -57,17 +59,7 @@ if __name__=='__main__':
     fid.write(src_dir + '\n')
     fid.close()
 
-    model = resnet50_unet(bands,
-            n_classes=n_classes,
-            input_height=my_size, 
-            input_width =my_size)
-    model.train(
-        train_src_dir      = src_dir,
-        checkpoints_path = os.path.join('weights', cls_name, 'vanilla_unet_1'),
-        epochs = cfg.epochs,
-        auto_resume_checkpoint=arc,
-        steps_per_epoch = 512,
-        batch_size = 4,
-        cls_name = cls_name,
-        do_augment = cfg.augm_flip
-    )
+    model = resnet50_unet(bands, n_classes=n_classes, input_height=my_size, input_width =my_size)
+    model.train(train_src_dir=src_dir, checkpoints_path=os.path.join('weights', cls_name, 'vanilla_unet_1'), auto_resume_checkpoint=arc, cls_name=cls_name, do_augment=cfg.augm_flip)
+
+#python my_train.py C:\Users\dva\unet5\weights\Vehicles new Vehicles

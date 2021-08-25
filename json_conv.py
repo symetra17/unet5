@@ -30,7 +30,7 @@ def get_rand_angle():
     return angle
 
 def read_img_anno(inplist, im_file_name, cls_name):
-    
+
     img = geotiff.imread(im_file_name)  # 5-channel array included NIR and DSM.    
     img = np.nan_to_num(img)
     anno_im = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
@@ -39,8 +39,12 @@ def read_img_anno(inplist, im_file_name, cls_name):
 
     for o in inplist:
         pts = np.array(o['points']).astype(np.int32)
+        if o['label']=='RedTaxi' or o['label']=='GreenTaxi' or o['label']=='Bus' or o['label']=='Truck' or o['label']=='PrivateCar' or o['label']=='MiniVan' or o['label']=='EngineeringVehicles' or o['label']=='Boat':
+            o['label'] = 'Car'
         try:
             classid = cls_sub_list[o['label']]
+            if classid==1:
+                pass # print('found car label')
         except:
             classid = 0
             if o['label'] != 'discard':
@@ -196,14 +200,14 @@ def filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend,
     outpath = path_insert_folde(outname + '.tif', 'slice'+a_or_b)
     outpath = path_insert_folde(outpath, 'image')
     geotiff.imwrite(outpath, sub_im.astype(np.float32))
+    
 
     # RGB jpg for manual inspection
-    geotiff.imwrite(os.path.splitext(outpath)[0]+'.jpg', 
-            sub_im[:,:,0:3].astype(np.uint8))
+    #geotiff.imwrite(os.path.splitext(outpath)[0]+'.jpg', sub_im[:,:,0:3].astype(np.uint8))
 
 
 def split_label(inplist, im_file_name, cls_name, a_or_b):
-    
+
     reload(cfg)
     cls_cfg = cfg.get(cls_name)
     try:
@@ -213,17 +217,16 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
 
     my_size = cls_cfg.my_size * down_scale
     random.seed()
-        
+    
     if not cfg.augm_rotation:
-
         img, anno_im = read_img_anno(inplist, im_file_name, cls_name)
         img = cv2.resize(img, None, fx=1/down_scale, fy=1/down_scale, 
                 interpolation=cv2.INTER_AREA)
         anno_im = cv2.resize(anno_im, None, fx=1/down_scale, fy=1/down_scale, 
                 interpolation=0)
     else:
-
-        anglels = [-30, -20, -10, 0, 10, 20, 30]
+        #anglels = [-30, -20, -10, 0, 10, 20, 30]
+        anglels = [-20, -10, 0, 10, 20]
         angle_idx = random.randint(0, len(anglels)-1)
         fname_im = os.path.splitext(im_file_name)[0] + '_im_rot_%d'%angle_idx
         fname_anno = os.path.splitext(im_file_name)[0] + '_anno_rot_%d'%angle_idx
@@ -269,21 +272,17 @@ def split_label(inplist, im_file_name, cls_name, a_or_b):
             if yend > img.shape[0]:
                 yend = img.shape[0]
             
-            outname = remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d'%(
-                img.shape[1],img.shape[0],xstart,xend,ystart,yend)
+            outname = remove_ext(im_file_name) + '_W_%d_H_%d_X_%d_%d_Y_%d_%d'%(img.shape[1],img.shape[0],xstart,xend,ystart,yend)
 
-            filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend, 
-                my_size, outname, a_or_b, cls_cfg.discard_empty)
+            filter_save_training_patch(img, anno_im, ystart, yend, xstart,xend, my_size, outname, a_or_b, cls_cfg.discard_empty)
 
             
 
 def mp_split(fname, cls_name, a_or_b):
-
     inp_json = remove_ext(fname) + '.json'
     if not os.path.exists(inp_json):
         print('Error: Could not find label json file for ', fname)
         return
-
     fid = open(inp_json, 'r')
     str1 = fid.read()
     fid.close()
@@ -291,6 +290,7 @@ def mp_split(fname, cls_name, a_or_b):
     nobj = len(y['shapes'])
     objects_list = y['shapes']
     split_label(objects_list, fname, cls_name, a_or_b)
+
 
 def recut(foder, cls_name, a_or_b):
 
@@ -327,7 +327,7 @@ def recut(foder, cls_name, a_or_b):
     create_clean_folder(ann_path)
     create_clean_folder(im_path)
 
-    pool = mp.Pool(processes=8)
+    pool = mp.Pool(processes=6)
     for n in range(2):
         args = zip( files, repeat(cls_name), repeat(a_or_b) )
         pool.starmap(mp_split, args)
@@ -504,16 +504,5 @@ def calculate_accuracy_dir(json_dir, pred_dir):
         calculate_accuracy(json_files[n], pred_files[n], out_txt_name)
 
 if __name__=='__main__':
-
-    #illustrate_mask_dir(R"C:\Users\dva\unet5\result", R"C:\Users\dva\unet_dsm\test-set\gt" )
-    calculate_accuracy_dir(R"C:\Users\dva\unet_dsm\test-set\gt", R"C:\Users\dva\unet5\result")
-
-    quit()
-
-    inp_dir = R'C:\Users\dva\unet_dsm\weights\Squatter\TS-1'
-    t0 = time.time()
-    xxx(inp_dir, 'Squatter', 'a')
-    t1 = time.time()
-    print('Total time:  %.0f'%(t1-t0))
-
-
+    inp_dir = R'C:\Users\dva\unet5\weights\Vehicles\TS'
+    recut(inp_dir, 'Vehicles', 'a')
