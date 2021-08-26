@@ -5,10 +5,10 @@ predict_output_format = 'jpg'   # option include jpg bmp
 show_training_page = True
 
 augm_rotation = True
-augm_angle_range = [-30, 30]
 augm_translate = True
+augm_flip = True
 
-cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar', 'Algae', 'DSM', 'House63']
+cls_list = ['Farmland','Trees','Vehicles','Squatter','Solar']
 
 NUM_OF_PRED_PROC = 1
 
@@ -18,7 +18,8 @@ def get(cls_name):
             my_size = 512
             down_scale = 1
             bands = 4
-            cls_sub_list = OrderedDict({'Vehicles':1})
+            #cls_sub_list = OrderedDict({'RedTaxi':1, 'Bus':2, 'Truck':3, 'PrivateCar':4, 'MiniVan':5, 'EngineeringVehicles':6,'Boat':7})
+            cls_sub_list = OrderedDict({'Car':1})
             discard_empty = 0.8   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == "Trees":
         class cls_cfg:
@@ -32,7 +33,8 @@ def get(cls_name):
             my_size = 512
             down_scale = 4
             bands = 5
-            cls_sub_list = OrderedDict({'Squatter':1,'BuildingTower':2})
+            #cls_sub_list = OrderedDict({'Squatter':1,'BuildingTower':1})
+            cls_sub_list = OrderedDict({'Squatter':1})
             discard_empty = 0.01   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == 'Solar':
         class cls_cfg:
@@ -40,7 +42,7 @@ def get(cls_name):
             down_scale = 1
             bands = 4
             cls_sub_list = OrderedDict({'Solar':1})
-            discard_empty = 0.98   # discard some training images without object, 0.8 for dropping 80% 
+            discard_empty = 0.97   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == 'Farmland':
         class cls_cfg:
             my_size = 512
@@ -48,20 +50,6 @@ def get(cls_name):
             bands = 4
             cls_sub_list = OrderedDict({'Farmland':1})
             discard_empty = 0.8   # discard some training images without object, 0.8 for dropping 80% 
-    elif cls_name == 'Algae':
-        class cls_cfg:
-            my_size = 224
-            down_scale = 1
-            bands = 3
-            cls_sub_list = OrderedDict({'long':1, 'medium':2, 'short':3})
-            discard_empty = 0.01   # discard some training images without object, 0.8 for dropping 80% 
-    elif cls_name == 'DSM':
-        class cls_cfg:
-            my_size = 480
-            down_scale = 4
-            bands = 3
-            cls_sub_list = OrderedDict({'Squatter':1})
-            discard_empty = 0.99   # discard some training images without object, 0.8 for dropping 80% 
     elif cls_name == 'House63':
         class cls_cfg:
             my_size = 512

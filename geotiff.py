@@ -149,7 +149,7 @@ def polygonize(rasterTemp, outShp):
             if os.path.exists(outShp):
                 driver.DeleteDataSource(outShp)
             outDatasource = driver.CreateDataSource(outShp)            
-            # get proj from raster            
+            # get proj from raster
             srs = osr.SpatialReference()
             srs.ImportFromWkt( sourceRaster.GetProjectionRef() )
             # create layer with proj
@@ -170,11 +170,12 @@ def polygonize(rasterTemp, outShp):
 
             for n, i in enumerate(lyr):
                 lyr.SetFeature(i)
-                # if area is less than inMinSize or if it isn't forest, remove polygon 
+                # if area is less than inMinSize or if it isn't forest, remove polygon
                 if i.GetField('Class')!=255:
                     lyr.DeleteFeature(i.GetFID())
             ioShpFile.Destroy()
             return
+
 
 def adjust_gamma_16bit(image, gamma=1.4, post_level=0.014):    
     image = image.astype(np.float)
@@ -209,17 +210,18 @@ def get_img_h_w(fname):
     img = rb.ReadAsArray()
     return img.shape
 
+
 if __name__=='__main__':
-    FileName = R"C:\Users\dva\Pictures\Ortho63\63ST7SW9c2013302.tif"
 
+    fileName = R"C:\Users\dva\Pictures\20200218SA1_B05_6NE14D.TIF"
+    np4ch = np.zeros((12000,15000,4), np.uint8)
     
-    np4ch = np.zeros((6000,7500,4),np.uint8)
-    generate_tif_alpha(np4ch, 'out.tif', FileName)
+    tmp_tif_fname = R'C:\Users\dva\Pictures\out_B05_6NE14D.tif'
+    generate_tif_alpha(np4ch, tmp_tif_fname , fileName)
 
-    quit()
 
     fname = R"C:\Users\echo\Pictures\lands_inference_example\example2\DOM\20180103SA1_B05_6NW7A.TIF"
-    #fname = R"C:\Users\echo\Pictures\squatter result demo\downsampled_result.jpg"
+    
     import time
 
     t0=time.time()

@@ -77,8 +77,7 @@ def get_pairs_from_paths(images_path, segs_path, ignore_non_matching=False):
     return return_value
 
 
-def get_image_array(image_input, width, height, imgNorm="sub_mean",
-                  ordering='channels_first'):
+def get_image_array(image_input, width, height):
     """ Load image array from input """
     img = image_input
     img = img.astype(np.float32)
@@ -87,11 +86,13 @@ def get_image_array(image_input, width, height, imgNorm="sub_mean",
     img[:, :, 2] -= 110.0
     if img.shape[2] > 3:
         img[:, :, 3] -= 125.0
-    # dsm normalization
-    img[:,:,4] = img[:,:,4] - img[:,:,4].min()
-    img[:,:,4] = img[:,:,4]/(img[:,:,4].max()+1.0)
-    
-    img = img[:, :, ::-1]
+        
+    if img.shape[2] > 4:
+        # dsm normalization
+        img[:,:,4] = img[:,:,4] - img[:,:,4].min()
+        img[:,:,4] = img[:,:,4]/(img[:,:,4].max()+1.0)
+        
+    img = img[:, :, ::-1]   # reversing color channel
     return img
 
 
@@ -159,8 +160,7 @@ def verify_segmentation_dataset(images_path, segs_path, n_classes, show_all_erro
 import random
 def image_segmentation_generator(images_path, segs_path, batch_size,
                                  n_classes, input_height, input_width,
-                                 output_height, output_width,
-                                 do_augment=False):
+                                 output_height, output_width, do_augment=False):
 
     img_seg_pairs = get_pairs_from_paths(images_path, segs_path)
     random.shuffle(img_seg_pairs)  # just shffle once and cycle forever
@@ -173,8 +173,7 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
             im = geotiff.imread(im)
             seg = cv2.imread(seg, 1)
 
-            if do_augment:
-                
+            if do_augment:                
                 random_bit = random.getrandbits(1)
                 if bool(random_bit):
                     im = cv2.flip(im, 0)
@@ -196,8 +195,6 @@ def image_segmentation_generator(images_path, segs_path, batch_size,
                         im = iaa_ops.augment_image(im)
                         seg = iaa_ops.augment_image(seg)
 
-            X.append(get_image_array(im, input_width,
-                                   input_height, ordering=IMAGE_ORDERING))
-            Y.append(get_segmentation_array(
-                seg, n_classes, output_width, output_height))
+            X.append(get_image_array(im, input_width, input_height))
+            Y.append(get_segmentation_array(seg, n_classes, output_width, output_height))
         yield np.array(X), np.array(Y)
